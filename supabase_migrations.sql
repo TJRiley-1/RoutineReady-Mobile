@@ -63,3 +63,19 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON active_timeline
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON display_settings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- 6. Stale session cleanup function (call via pg_cron or Supabase Edge Function)
+CREATE OR REPLACE FUNCTION cleanup_stale_sessions()
+RETURNS void AS $$
+BEGIN
+  UPDATE display_sessions
+  SET is_active = false
+  WHERE is_active = true
+    AND last_heartbeat < now() - interval '5 minutes';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 7. Enable pg_cron extension and schedule cleanup every 5 minutes
+-- NOTE: pg_cron must be enabled in your Supabase project (Database > Extensions)
+-- After enabling, run:
+-- SELECT cron.schedule('cleanup-stale-sessions', '*/5 * * * *', 'SELECT cleanup_stale_sessions()');

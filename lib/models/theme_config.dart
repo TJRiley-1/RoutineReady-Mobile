@@ -82,6 +82,68 @@ class ThemeConfig {
     return double.tryParse(fontWeight) ?? 500;
   }
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'emoji': emoji,
+        'bgGradientFrom': bgGradientFrom,
+        'bgGradientVia': bgGradientVia,
+        'bgGradientTo': bgGradientTo,
+        'cardRounded': cardRounded,
+        'cardBorderColor': cardBorderColor,
+        'cardBorderColorAlt': cardBorderColorAlt,
+        'cardBorderWidth': cardBorderWidth,
+        'cardBgColor': cardBgColor,
+        'fontWeight': fontWeight,
+        'fontTransform': fontTransform,
+        'fontFamily': fontFamily,
+        'currentGlowColor': currentGlowColor,
+        'currentBgOverlay': currentBgOverlay,
+        'currentBorderEnhance': currentBorderEnhance,
+        'currentShadow': currentShadow,
+        'tickPastColor': tickPastColor,
+        'tickCurrentColor': tickCurrentColor,
+        'tickFutureColor': tickFutureColor,
+        'timeCardAccentColor': timeCardAccentColor,
+        'timeCardAccentColorAlt': timeCardAccentColorAlt,
+        'progressLineColors': progressLineColors,
+        'progressBgColor': progressBgColor,
+        'specialEffect': specialEffect,
+      };
+
+  factory ThemeConfig.fromJson(Map<String, dynamic> json) {
+    return ThemeConfig(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      emoji: json['emoji'] as String? ?? '',
+      bgGradientFrom: json['bgGradientFrom'] as String? ?? '#ffffff',
+      bgGradientVia: json['bgGradientVia'] as String?,
+      bgGradientTo: json['bgGradientTo'] as String? ?? '#ffffff',
+      cardRounded: json['cardRounded'] as String? ?? 'rounded-2xl',
+      cardBorderColor: json['cardBorderColor'] as String? ?? '#000000',
+      cardBorderColorAlt: json['cardBorderColorAlt'] as String?,
+      cardBorderWidth: json['cardBorderWidth'] as String? ?? '2px',
+      cardBgColor: json['cardBgColor'] as String? ?? '#ffffff',
+      fontWeight: json['fontWeight'] as String? ?? '500',
+      fontTransform: json['fontTransform'] as String? ?? 'none',
+      fontFamily: json['fontFamily'] as String? ?? 'sans-serif',
+      currentGlowColor: json['currentGlowColor'] as String? ?? '#000000',
+      currentBgOverlay: json['currentBgOverlay'] as String? ?? '#000000',
+      currentBorderEnhance: json['currentBorderEnhance'] as bool? ?? false,
+      currentShadow: json['currentShadow'] as bool?,
+      tickPastColor: json['tickPastColor'] as String? ?? '#22c55e',
+      tickCurrentColor: json['tickCurrentColor'] as String? ?? '#3b82f6',
+      tickFutureColor: json['tickFutureColor'] as String? ?? '#d1d5db',
+      timeCardAccentColor: json['timeCardAccentColor'] as String? ?? '#000000',
+      timeCardAccentColorAlt: json['timeCardAccentColorAlt'] as String?,
+      progressLineColors: (json['progressLineColors'] as Map<String, dynamic>?)
+              ?.map((k, v) => MapEntry(k, v as String)) ??
+          {},
+      progressBgColor: json['progressBgColor'] as String? ?? '#d1d5db',
+      specialEffect: json['specialEffect'] as String?,
+    );
+  }
+
   ThemeConfig copyWith({
     String? id,
     String? name,

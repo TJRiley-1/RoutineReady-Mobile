@@ -400,6 +400,72 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     ref.invalidateSelf();
   }
 
+  Map<String, dynamic> exportBackup() {
+    final current = state.valueOrNull;
+    if (current == null) return {};
+
+    return {
+      'version': 1,
+      'exportedAt': DateTime.now().toIso8601String(),
+      'school': current.school.toJson(),
+      'displaySettings': current.displaySettings.toDbJson(),
+      'currentTheme': current.currentTheme,
+      'timeline': current.timeline.toJson(),
+      'templates': current.templates.map((t) => t.toJson()).toList(),
+      'weeklySchedule': current.weeklySchedule.toJson(),
+      'customThemes': current.customThemes.map((t) => t.toJson()).toList(),
+    };
+  }
+
+  Future<void> importBackup(Map<String, dynamic> data) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    final timeline = ActiveTimeline.fromJson(
+        data['timeline'] as Map<String, dynamic>? ?? {});
+    final displaySettings = DisplaySettings.fromDbJson(
+        data['displaySettings'] as Map<String, dynamic>? ?? {});
+    final currentTheme = data['currentTheme'] as String? ?? 'routine-ready';
+    final templates = ((data['templates'] as List?) ?? [])
+        .map((t) => TaskTemplate.fromJson(t as Map<String, dynamic>))
+        .toList();
+    final weeklySchedule = WeeklySchedule.fromJson(
+        data['weeklySchedule'] as Map<String, dynamic>? ?? {});
+    final customThemes = ((data['customThemes'] as List?) ?? [])
+        .map((t) => ThemeConfig.fromJson(t as Map<String, dynamic>))
+        .toList();
+
+    state = AsyncData(current.copyWith(
+      timeline: timeline,
+      displaySettings: displaySettings,
+      currentTheme: currentTheme,
+      templates: templates,
+      weeklySchedule: weeklySchedule,
+      customThemes: customThemes,
+      hasUnsavedChanges: true,
+    ));
+
+    // Persist everything
+    await Future.wait([
+      _saveDisplaySettingsToDb(displaySettings, currentTheme),
+      _saveTimelineToDb(timeline, null),
+      _saveCustomThemesToDb(customThemes),
+    ]);
+    final idMap = await _saveTemplatesToDb(templates);
+    final remappedSchedule = weeklySchedule.remapIds(idMap);
+    await _saveWeeklyScheduleToDb(remappedSchedule);
+
+    state = AsyncData(current.copyWith(
+      timeline: timeline,
+      displaySettings: displaySettings,
+      currentTheme: currentTheme,
+      templates: templates,
+      weeklySchedule: remappedSchedule,
+      customThemes: customThemes,
+      hasUnsavedChanges: false,
+    ));
+  }
+
   // --- Private DB helpers ---
 
   Future<void> _saveDisplaySettingsToDb(

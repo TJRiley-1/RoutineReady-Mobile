@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,16 +22,29 @@ class DisplayScreen extends ConsumerStatefulWidget {
   ConsumerState<DisplayScreen> createState() => _DisplayScreenState();
 }
 
-class _DisplayScreenState extends ConsumerState<DisplayScreen> {
+class _DisplayScreenState extends ConsumerState<DisplayScreen>
+    with WidgetsBindingObserver {
   Timer? _timer;
   int _currentTaskIndex = -1;
   double _elapsedInTask = 0;
+  bool _isOffline = false;
 
   @override
   void initState() {
     super.initState();
-    // Enter immersive mode
+    WidgetsBinding.instance.addObserver(this);
+
+    // Kiosk: immersive mode + landscape lock
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    // Web fullscreen hint
+    if (kIsWeb) {
+      // Chromium --kiosk handles this; no extra action needed
+    }
 
     // Subscribe to realtime
     final schoolState = ref.read(schoolProvider).valueOrNull;
@@ -38,17 +52,33 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen> {
       ref.read(realtimeProvider).subscribe(schoolState.school.id);
     }
 
-    // Start time tracking
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateProgress());
+    // Start time tracking (every second)
+    _timer =
+        Timer.periodic(const Duration(seconds: 1), (_) => _updateProgress());
     _updateProgress();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     ref.read(realtimeProvider).unsubscribe();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Reconnect realtime on resume
+      final schoolState = ref.read(schoolProvider).valueOrNull;
+      if (schoolState != null) {
+        ref.read(realtimeProvider).subscribe(schoolState.school.id);
+      }
+      setState(() => _isOffline = false);
+      _updateProgress();
+    }
   }
 
   void _updateProgress() {
@@ -80,27 +110,66 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen> {
 
     final timeline = schoolState.timeline;
     final settings = schoolState.displaySettings;
-    final theme = getActiveTheme(schoolState.currentTheme, schoolState.customThemes);
+    final theme =
+        getActiveTheme(schoolState.currentTheme, schoolState.customThemes);
     final scaleFactor = settings.scale / 100;
+    final screenSize = MediaQuery.of(context).size;
+
+    // Calculate scale to fit the virtual resolution into the physical screen
+    final fitScaleX = screenSize.width / (settings.width * scaleFactor);
+    final fitScaleY = screenSize.height / (settings.height * scaleFactor);
+    final fitScale = fitScaleX < fitScaleY ? fitScaleX : fitScaleY;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Scaled display container
+          // Full-screen background
           Container(
             decoration: BoxDecoration(
               gradient: getBackgroundGradient(theme),
             ),
+          ),
+          // Scaled display container
+          Transform.scale(
+            scale: fitScale * scaleFactor,
+            alignment: Alignment.topLeft,
             child: SizedBox(
               width: settings.width.toDouble(),
               height: settings.height.toDouble(),
-              child: Transform.scale(
-                scale: scaleFactor,
-                alignment: Alignment.topLeft,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: getBackgroundGradient(theme),
+                ),
                 child: _buildDisplayMode(timeline, settings, theme),
               ),
             ),
           ),
+          // Offline indicator
+          if (_isOffline)
+            Positioned(
+              top: 8,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.wifi_off, size: 16, color: Colors.amber),
+                      SizedBox(width: 6),
+                      Text('Offline - reconnecting...',
+                          style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           // Admin button overlay
           Positioned(
             top: 16,
@@ -109,7 +178,7 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen> {
               elevation: 4,
               borderRadius: BorderRadius.circular(8),
               child: InkWell(
-                onTap: () => _exitToModeSelect(),
+                onTap: _exitToModeSelect,
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   padding:

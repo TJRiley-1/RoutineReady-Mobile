@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme_constants.dart';
 import '../../providers/auth_provider.dart';
@@ -202,14 +204,30 @@ class _UserSettingsModalState extends ConsumerState<UserSettingsModal> {
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 8),
-                      OutlinedButton(
-                        onPressed: () => _resetSetup(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.brandError,
-                          side: const BorderSide(
-                              color: AppColors.brandError),
-                        ),
-                        child: const Text('Reset to Default'),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => _exportBackup(context),
+                            icon: const Icon(Icons.upload, size: 18),
+                            label: const Text('Export Backup'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => _importBackup(context),
+                            icon: const Icon(Icons.download, size: 18),
+                            label: const Text('Restore Backup'),
+                          ),
+                          OutlinedButton(
+                            onPressed: () => _resetSetup(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.brandError,
+                              side: const BorderSide(
+                                  color: AppColors.brandError),
+                            ),
+                            child: const Text('Reset to Default'),
+                          ),
+                        ],
                       ),
 
                       const SizedBox(height: 24),
@@ -236,6 +254,74 @@ class _UserSettingsModalState extends ConsumerState<UserSettingsModal> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _exportBackup(BuildContext context) {
+    final backup = ref.read(schoolProvider.notifier).exportBackup();
+    if (backup.isEmpty) return;
+
+    final json = const JsonEncoder.withIndent('  ').convert(backup);
+    Clipboard.setData(ClipboardData(text: json));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Backup copied to clipboard!')),
+    );
+  }
+
+  void _importBackup(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Restore Backup'),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                  'Paste the backup JSON below. This will overwrite your current data.'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                maxLines: 8,
+                decoration: const InputDecoration(
+                  hintText: 'Paste backup JSON here...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                final data =
+                    jsonDecode(controller.text) as Map<String, dynamic>;
+                Navigator.pop(ctx);
+                await ref.read(schoolProvider.notifier).importBackup(data);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Backup restored!')),
+                  );
+                }
+              } catch (e) {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text('Invalid backup: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Restore'),
+          ),
+        ],
       ),
     );
   }
