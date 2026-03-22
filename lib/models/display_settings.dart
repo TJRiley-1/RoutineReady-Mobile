@@ -1,0 +1,121 @@
+class DisplaySettings {
+  final int width;
+  final int height;
+  final int scale;
+  final String mode;
+  final int rows;
+  final String pathDirection;
+  final String transitionType;
+  final String? mascotImage;
+  final String? topBannerImage;
+  final int topBannerHeight;
+  final String? bottomBannerImage;
+  final int bottomBannerHeight;
+  final bool showClock;
+  final int autoPanTileHeight;
+  final String selectedSprite;
+  final String selectedSurface;
+  final int roadHeight;
+
+  const DisplaySettings({
+    this.width = 2560,
+    this.height = 1080,
+    this.scale = 100,
+    this.mode = 'horizontal',
+    this.rows = 1,
+    this.pathDirection = 'sequential',
+    this.transitionType = 'progress-line',
+    this.mascotImage,
+    this.topBannerImage,
+    this.topBannerHeight = 48,
+    this.bottomBannerImage,
+    this.bottomBannerHeight = 48,
+    this.showClock = false,
+    this.autoPanTileHeight = 60,
+    this.selectedSprite = 'penguin',
+    this.selectedSurface = 'ice',
+    this.roadHeight = 32,
+  });
+
+  factory DisplaySettings.fromDbJson(Map<String, dynamic> json) {
+    return DisplaySettings(
+      width: json['width'] as int? ?? 2560,
+      height: json['height'] as int? ?? 1080,
+      scale: json['scale'] as int? ?? 100,
+      mode: json['mode'] as String? ?? 'horizontal',
+      rows: json['rows'] as int? ?? 1,
+      pathDirection: json['path_direction'] as String? ?? 'sequential',
+      transitionType: json['transition_type'] as String? ?? 'progress-line',
+      mascotImage: json['mascot_image'] as String?,
+      topBannerImage: json['top_banner_image'] as String?,
+      topBannerHeight: json['top_banner_height'] as int? ?? 48,
+      bottomBannerImage: json['bottom_banner_image'] as String?,
+      bottomBannerHeight: json['bottom_banner_height'] as int? ?? 48,
+      showClock: json['show_clock'] as bool? ?? false,
+      autoPanTileHeight: json['auto_pan_tile_height'] as int? ?? 60,
+      selectedSprite: json['selected_sprite'] as String? ?? 'penguin',
+      selectedSurface: json['selected_surface'] as String? ?? 'ice',
+      roadHeight: json['road_height'] as int? ?? 32,
+    );
+  }
+
+  Map<String, dynamic> toDbJson() => {
+        'width': width,
+        'height': height,
+        'scale': scale,
+        'mode': mode,
+        'rows': rows,
+        'path_direction': pathDirection,
+        'transition_type': transitionType,
+        'mascot_image': mascotImage,
+        'top_banner_image': topBannerImage,
+        'top_banner_height': topBannerHeight,
+        'bottom_banner_image': bottomBannerImage,
+        'bottom_banner_height': bottomBannerHeight,
+        'show_clock': showClock,
+        'auto_pan_tile_height': autoPanTileHeight,
+        'selected_sprite': selectedSprite,
+        'selected_surface': selectedSurface,
+        'road_height': roadHeight,
+      };
+
+  DisplaySettings copyWith({
+    int? width,
+    int? height,
+    int? scale,
+    String? mode,
+    int? rows,
+    String? pathDirection,
+    String? transitionType,
+    String? mascotImage,
+    String? topBannerImage,
+    int? topBannerHeight,
+    String? bottomBannerImage,
+    int? bottomBannerHeight,
+    bool? showClock,
+    int? autoPanTileHeight,
+    String? selectedSprite,
+    String? selectedSurface,
+    int? roadHeight,
+  }) {
+    return DisplaySettings(
+      width: width ?? this.width,
+      height: height ?? this.height,
+      scale: scale ?? this.scale,
+      mode: mode ?? this.mode,
+      rows: rows ?? this.rows,
+      pathDirection: pathDirection ?? this.pathDirection,
+      transitionType: transitionType ?? this.transitionType,
+      mascotImage: mascotImage ?? this.mascotImage,
+      topBannerImage: topBannerImage ?? this.topBannerImage,
+      topBannerHeight: topBannerHeight ?? this.topBannerHeight,
+      bottomBannerImage: bottomBannerImage ?? this.bottomBannerImage,
+      bottomBannerHeight: bottomBannerHeight ?? this.bottomBannerHeight,
+      showClock: showClock ?? this.showClock,
+      autoPanTileHeight: autoPanTileHeight ?? this.autoPanTileHeight,
+      selectedSprite: selectedSprite ?? this.selectedSprite,
+      selectedSurface: selectedSurface ?? this.selectedSurface,
+      roadHeight: roadHeight ?? this.roadHeight,
+    );
+  }
+}
