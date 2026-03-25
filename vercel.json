@@ -1,6 +1,7 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/app/(.*)", "destination": "/app/index.html" },
+    { "source": "/((?!app/).*)", "destination": "/index.html" }
   ],
   "buildCommand": "bash build.sh",
   "outputDirectory": "build/web",

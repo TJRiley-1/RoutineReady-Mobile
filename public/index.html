@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Routine Ready — Visual Schedules for Calmer Classrooms</title>
+  <meta name="description" content="Routine Ready displays clear, predictable visual schedules on your classroom screen — reducing transition anxiety for autistic learners and supporting the whole class." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/landing.css" />
+</head>
+<body>
+<div class="landing-page" id="landing">
+
+  <!-- ── NAV ── -->
+  <nav class="lp-nav">
+    <a href="#" class="nav-logo" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})">
+      <div class="logo-mark">
+        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><polyline points="10,6 10,10 13,12"/></svg>
+      </div>
+      Routine <span>Ready</span>
+    </a>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#quotes">Schools</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <button class="btn-ghost" id="nav-signin-btn">Sign in</button>
+      <button class="btn-primary" id="nav-trial-btn">Free trial</button>
+    </div>
+  </nav>
+
+
+  <!-- ── HERO ── -->
+  <section class="lp-hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow fade-up" id="hero-eyebrow">For UK Primary Schools</div>
+
+      <h1 class="hero-headline fade-up delay-1">
+        <span id="hero-headline">Every child deserves to know</span><br/>
+        <em id="hero-emphasis">what comes next</em>
+      </h1>
+
+      <p class="hero-subline fade-up delay-2" id="hero-subline">Routine Ready displays clear, predictable visual schedules on your classroom screen — reducing transition anxiety for autistic learners and supporting the whole class.</p>
+
+      <div class="login-card fade-up delay-3" id="login-card">
+        <div class="login-card-header">
+          <div class="dot"></div>
+          <span id="login-header">Sign in to your classroom</span>
+        </div>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email" id="email-label">Email address</label>
+            <input type="email" id="email" placeholder="yourname@school.org.uk" required />
+          </div>
+
+          <div class="form-group" style="margin-top:0.75rem">
+            <label for="password" id="password-label">Password</label>
+            <input type="password" id="password" placeholder="••••••••" required />
+          </div>
+
+          <div class="login-error" id="login-error" style="display:none;margin-top:0.75rem;padding:0.5rem 0.75rem;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#dc2626;font-size:0.8rem"></div>
+
+          <button type="submit" class="btn-primary" id="login-submit" style="width:100%;padding:0.65rem;font-size:0.9rem;border-radius:6px;margin-top:0.75rem">Access my classroom →</button>
+        </form>
+
+        <div class="login-divider" id="login-divider">or</div>
+
+        <button class="btn-free-trial" id="free-trial-btn">✦ Try free — no account needed</button>
+
+        <p class="free-trial-note">
+          <span id="free-trial-note">Free trial: up to 5 tasks · no saved schedules · browser only</span><br/>
+          <a href="#pricing" id="free-trial-link">See full plan comparison →</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- CLASSROOM TV MOCKUP -->
+    <div class="hero-right fade-up delay-2">
+      <div class="classroom-scene">
+        <div class="classroom-wall">
+          <div class="tv-mount"></div>
+          <div class="ultrawide-tv">
+            <div class="tv-screen">
+              <div class="screen-topbar">
+                <span class="school-name" id="mockup-school">Maple Primary — Room 4B</span>
+                <span class="clock" id="mockup-clock">09:47</span>
+              </div>
+              <div class="screen-timeline" id="mockup-timeline">
+                <div class="time-bookend">
+                  <div class="time" id="mockup-start">09:00</div>
+                  <div class="label">Start</div>
+                </div>
+
+                <div style="display:contents">
+                  <div class="screen-task past"><div class="task-name">Circle Time</div><div class="task-dur">30 min</div></div>
+                  <div class="screen-ticks"><div class="tick done"></div><div class="tick done"></div><div class="tick done"></div></div>
+                </div>
+                <div style="display:contents">
+                  <div class="screen-task active"><div class="task-name">★ Maths</div><div class="task-dur">45 min</div></div>
+                  <div class="screen-ticks"><div class="tick current"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div></div>
+                </div>
+                <div style="display:contents">
+                  <div class="screen-task"><div class="task-name">Snack Time</div><div class="task-dur">15 min</div></div>
+                  <div class="screen-ticks"><div class="tick"></div></div>
+                </div>
+                <div style="display:contents">
+                  <div class="screen-task"><div class="task-name">Reading</div><div class="task-dur">45 min</div></div>
+                  <div class="screen-ticks"><div class="tick"></div><div class="tick"></div><div class="tick"></div><div class="tick"></div></div>
+                </div>
+                <div style="display:contents">
+                  <div class="screen-task"><div class="task-name">Outdoor Play</div><div class="task-dur">45 min</div></div>
+                  <div class="screen-ticks"><div class="tick"></div><div class="tick"></div><div class="tick"></div></div>
+                </div>
+
+                <div class="time-bookend">
+                  <div class="time" style="color:#dc2626" id="mockup-end">15:00</div>
+                  <div class="label">End</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="classroom-floor"></div>
+        <p class="scene-caption" id="mockup-caption">The Routine Ready display, mounted in a typical UK primary classroom</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── QUOTES ── -->
+  <section id="quotes" class="lp-section lp-quotes">
+    <div class="section-inner">
+      <div class="quotes-header reveal">
+        <div class="section-eyebrow" id="quotes-eyebrow">What teachers say</div>
+        <h2 class="section-heading" id="quotes-heading">Making a real difference, every day</h2>
+        <p class="section-subtext" style="margin:0 auto" id="quotes-subtext">Placeholder testimonials — replace with real quotes from pilot schools before launch.</p>
+      </div>
+      <div class="quotes-grid" id="quotes-grid">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── SCHOOL LOGOS ── -->
+  <section id="logos" class="lp-logos">
+    <div class="section-inner">
+      <div class="logos-header reveal">
+        <p class="logos-label" id="logos-label">Trusted by schools across the UK</p>
+      </div>
+      <div class="logos-row reveal" id="logos-row">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── HOW IT WORKS ── -->
+  <section id="how-it-works" class="lp-section lp-how-it-works">
+    <div class="section-inner">
+      <div class="how-header reveal">
+        <div class="section-eyebrow" id="how-eyebrow">How it works</div>
+        <h2 class="section-heading" id="how-heading">Simple to set up. Powerful every day.</h2>
+        <p class="section-subtext" id="how-subtext">Routine Ready works on any classroom TV or display. Teachers manage everything from their own device — no IT support needed day-to-day.</p>
+      </div>
+      <div class="steps-grid" id="steps-grid">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── PRICING ── -->
+  <section id="pricing" class="lp-section lp-pricing">
+    <div class="section-inner">
+      <div class="pricing-header reveal">
+        <div class="section-eyebrow" id="pricing-eyebrow">Plans & pricing</div>
+        <h2 class="section-heading" id="pricing-heading">Start free. Upgrade when you're ready.</h2>
+        <p class="section-subtext" id="pricing-subtext">Try Routine Ready in your browser with no commitment. For full classroom deployment, contact us for school pricing.</p>
+      </div>
+      <div class="pricing-grid reveal" id="pricing-grid">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── CONTACT ── -->
+  <section id="contact" class="lp-contact">
+    <div class="contact-inner">
+      <div class="contact-eyebrow reveal" id="contact-eyebrow">Get in touch</div>
+      <h2 class="contact-heading reveal">
+        <span id="contact-heading">Ready to bring</span> <em id="contact-emphasis">calm</em> <span id="contact-end">to your classroom?</span>
+      </h2>
+      <p class="contact-subtext reveal" id="contact-subtext">Whether you have a question, want to arrange a trial, or are ready to deploy across your school — we'd love to hear from you.</p>
+
+      <div id="contact-success" class="contact-success reveal" style="display:none">
+        <svg viewBox="0 0 24 24" class="contact-success-icon"><circle cx="12" cy="12" r="10"/><polyline points="8,12 11,15 16,9"/></svg>
+        <p id="contact-success-text">Thanks for getting in touch! We'll respond within one working day.</p>
+      </div>
+
+      <form class="contact-form reveal" id="contact-form">
+        <div class="contact-form-row">
+          <input type="text" name="name" placeholder="Your name" required />
+          <input type="text" name="position" placeholder="Your role (e.g. Class Teacher, SENCO, Headteacher)" required />
+        </div>
+        <input type="text" name="school" placeholder="School name" required />
+        <textarea name="message" rows="4" placeholder="How can we help?" required></textarea>
+        <div class="contact-error" id="contact-error" style="display:none"></div>
+        <button type="submit" class="btn-primary contact-submit" id="contact-submit">Send message</button>
+      </form>
+
+      <p class="contact-note reveal" id="contact-note">We typically respond within one working day</p>
+    </div>
+  </section>
+
+
+  <!-- ── FOOTER ── -->
+  <footer class="lp-footer">
+    <div class="footer-logo">Routine <span>Ready</span> &middot; <span id="footer-tagline">Visual Schedules</span></div>
+    <div class="footer-text" id="footer-copyright">© 2025 Routine Ready · For UK Primary Schools · info@routineready.co.uk</div>
+  </footer>
+
+</div>
+
+<!-- ── SCRIPTS ── -->
+<!-- Supabase client for auth + contact form -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<script type="module">
+// ── Sanity client (with stega support for visual editing) ──
+import { createClient } from 'https://esm.sh/@sanity/client@7?bundle'
+
+const SANITY_PROJECT_ID = 'a81t0e2b'
+const SANITY_DATASET = 'production'
+const SUPABASE_URL = 'https://zbazllzzhiugpyzalntv.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpiYXpsbHp6aGl1Z3B5emFsbnR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyOTc0NTIsImV4cCI6MjA4Nzg3MzQ1Mn0.Jb87NdE6aTP1oM0-XtcwEefAaCN9kVTjtCwT7jkTTmc'
+
+// ── Detect Sanity Studio preview ──
+const isStudioPreview = window.parent !== window
+
+// ── Sanity client with stega encoding for click-to-edit ──
+const sanityClient = createClient({
+  projectId: SANITY_PROJECT_ID,
+  dataset: SANITY_DATASET,
+  apiVersion: '2024-01-01',
+  useCdn: !isStudioPreview,
+  perspective: isStudioPreview ? 'previewDrafts' : 'published',
+  stega: {
+    enabled: isStudioPreview,
+    studioUrl: 'https://routineready.sanity.studio',
+  },
+})
+
+// ── Supabase client ──
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+// ── Visual editing overlay (only in Sanity Studio iframe) ──
+if (isStudioPreview) {
+  import('https://esm.sh/@sanity/visual-editing@2?bundle').then(({ enableVisualEditing }) => {
+    enableVisualEditing({
+      history: {
+        update: (update) => {
+          if (update.type === 'push') window.history.pushState(null, '', update.url)
+          else if (update.type === 'replace') window.history.replaceState(null, '', update.url)
+          else if (update.type === 'pop') window.history.back()
+        },
+        subscribe: (navigate) => {
+          const handler = () => navigate({ type: 'push', url: `${location.pathname}${location.search}` })
+          window.addEventListener('popstate', handler)
+          return () => window.removeEventListener('popstate', handler)
+        },
+      },
+    })
+  })
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  FALLBACK CONTENT
+// ══════════════════════════════════════════════════════════════
+const fallback = {
+  quotes: {
+    items: [
+      { text: 'Placeholder quote from a class teacher about the impact Routine Ready has had on morning transitions and the calmer start to the day it provides.', stat: '⏱ Saves X minutes per transition', avatar: '👩‍🏫', name: 'Teacher Name, Role', role: 'School Name, Town' },
+      { text: 'Placeholder quote from a SENCO about how Routine Ready supports autistic learners and integrates naturally into the existing classroom routine.', stat: '📉 Reduced anxiety incidents', avatar: '👨‍🏫', name: 'SENCO Name, Role', role: 'School Name, Town' },
+      { text: 'Placeholder quote from a headteacher or school business manager about ease of deployment and value relative to cost for the whole school.', stat: '🏫 Used across X classrooms', avatar: '🧑‍💼', name: 'Head Name, Headteacher', role: 'School Name, Town' },
+    ],
+  },
+  logos: {
+    items: [{ name: 'School Logo' }, { name: 'School Logo' }, { name: 'School Logo' }, { name: 'School Logo' }, { name: 'School Logo' }],
+  },
+  howItWorks: {
+    steps: [
+      { title: 'Plan your day', description: 'Log in from any device on the school network. Add tasks, set durations, and upload images for each activity in minutes.', detail: 'Works from phone, tablet or laptop' },
+      { title: 'Display to your class', description: "The timeline appears automatically on your classroom screen. The current task is highlighted. Completed tasks fade. What's coming next is always visible.", detail: 'Updates in real time, no interaction needed' },
+      { title: 'Calmer transitions', description: 'Children know what comes next. Anxiety reduces. Transitions become smoother. The whole class benefits — not just students with additional needs.', detail: 'Measurable impact from day one' },
+    ],
+  },
+  pricing: {
+    plans: [
+      {
+        name: 'Free Trial', price: '£0', priceSuffix: '/ no account needed',
+        description: 'Try Routine Ready directly in your browser. No sign-up required. Perfect for exploring the product before committing.',
+        features: [
+          { text: 'Up to 5 tasks per schedule', included: true },
+          { text: 'Live timeline display', included: true },
+          { text: 'Admin panel access', included: true },
+          { text: 'No saved schedules', included: false },
+          { text: 'Resets when browser closes', included: false },
+          { text: 'No image uploads', included: false },
+        ],
+        ctaText: 'Try free in browser →', ctaStyle: 'outline', featured: false,
+      },
+      {
+        name: 'Full Access', price: 'Contact us', priceSuffix: '/ for pricing',
+        description: 'Full classroom deployment on any display. Everything you need for a reliable, daily visual schedule.',
+        features: [
+          { text: 'Unlimited tasks per schedule', included: true },
+          { text: 'Saved schedules & templates', included: true },
+          { text: 'Image uploads per task', included: true },
+          { text: 'Any browser or device display', included: true },
+          { text: 'Weekly day templates', included: true },
+          { text: 'Multi-classroom support', included: true },
+          { text: 'Setup & deployment support', included: true },
+        ],
+        ctaText: 'Get in touch for pricing →', ctaStyle: 'solid', featured: true, note: 'info@routineready.co.uk',
+      },
+    ],
+  },
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER DYNAMIC SECTIONS
+// ══════════════════════════════════════════════════════════════
+function checkSvg() {
+  return '<svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" /></svg>'
+}
+
+function renderQuotes(items) {
+  const grid = document.getElementById('quotes-grid')
+  grid.innerHTML = items.map((q) => `
+    <div class="quote-card reveal">
+      <div class="quote-mark">\u201C</div>
+      <p class="quote-text">${q.text}</p>
+      <div class="quote-stat">${q.stat}</div>
+      <div class="quote-author">
+        <div class="author-avatar">${q.avatar}</div>
+        <div>
+          <div class="author-name">${q.name}</div>
+          <div class="author-role">${q.role}</div>
+        </div>
+      </div>
+    </div>
+  `).join('')
+}
+
+function renderLogos(items) {
+  const row = document.getElementById('logos-row')
+  row.innerHTML = items.map((l) => `
+    <div class="school-logo-placeholder"><span>${l.name}</span></div>
+  `).join('')
+}
+
+function renderSteps(steps) {
+  const grid = document.getElementById('steps-grid')
+  grid.innerHTML = steps.map((s, i) => `
+    <div class="step-card reveal">
+      <div class="step-number">${i + 1}</div>
+      <h3 class="step-title">${s.title}</h3>
+      <p class="step-description">${s.description}</p>
+      <div class="step-detail">${s.detail}</div>
+    </div>
+  `).join('')
+}
+
+function renderPricing(plans) {
+  const grid = document.getElementById('pricing-grid')
+  grid.innerHTML = plans.map((plan) => `
+    <div class="pricing-card ${plan.featured ? 'featured' : ''}">
+      <div class="pricing-plan">${plan.name}</div>
+      <div class="pricing-price">${plan.price} <span>${plan.priceSuffix}</span></div>
+      <p class="pricing-desc">${plan.description}</p>
+      <div class="feature-list">
+        ${plan.features.map((f) => `
+          <div class="feature-item ${!f.included ? 'muted' : ''}">
+            ${f.included
+              ? `<div class="feature-check">${checkSvg()}</div>`
+              : '<div class="feature-x">&#10005;</div>'}
+            ${f.text}
+          </div>
+        `).join('')}
+      </div>
+      <button class="pricing-cta ${plan.ctaStyle}" onclick="${plan.ctaStyle === 'solid' ? "document.getElementById('contact').scrollIntoView({behavior:'smooth'})" : "location.href='/app?mode=trial'"}">${plan.ctaText}</button>
+      ${plan.note ? `<p class="pricing-note">${plan.note}</p>` : ''}
+    </div>
+  `).join('')
+}
+
+// Render with fallback content immediately
+renderQuotes(fallback.quotes.items)
+renderLogos(fallback.logos.items)
+renderSteps(fallback.howItWorks.steps)
+renderPricing(fallback.pricing.plans)
+
+
+// ══════════════════════════════════════════════════════════════
+//  FETCH SANITY CONTENT & UPDATE DOM
+// ══════════════════════════════════════════════════════════════
+const QUERY = '*[_type == "landingPage" && _id == "landingPage"][0]'
+
+sanityClient.fetch(QUERY).then((c) => {
+  if (!c) return
+
+  // Update simple text elements
+  const setText = (id, val) => { if (val) { const el = document.getElementById(id); if (el) el.textContent = val } }
+
+  if (c.meta?.title) document.title = c.meta.title
+
+  // Nav
+  if (c.nav?.links) {
+    const ul = document.getElementById('nav-links')
+    ul.innerHTML = c.nav.links.map((l) => `<li><a href="${l.href}">${l.label}</a></li>`).join('')
+  }
+  if (c.nav?.signInText) document.getElementById('nav-signin-btn').textContent = c.nav.signInText
+  if (c.nav?.freeTrialText) document.getElementById('nav-trial-btn').textContent = c.nav.freeTrialText
+
+  // Hero
+  setText('hero-eyebrow', c.hero?.eyebrow)
+  setText('hero-headline', c.hero?.headline)
+  setText('hero-emphasis', c.hero?.headlineEmphasis)
+  setText('hero-subline', c.hero?.subheadline)
+
+  // Login card
+  if (c.hero?.loginCard) {
+    const lc = c.hero.loginCard
+    setText('login-header', lc.header)
+    setText('email-label', lc.emailLabel)
+    setText('password-label', lc.passwordLabel)
+    if (lc.emailPlaceholder) document.getElementById('email').placeholder = lc.emailPlaceholder
+    if (lc.passwordPlaceholder) document.getElementById('password').placeholder = lc.passwordPlaceholder
+    if (lc.submitText) document.getElementById('login-submit').textContent = lc.submitText
+    setText('login-divider', lc.dividerText)
+    if (lc.freeTrialText) document.getElementById('free-trial-btn').textContent = lc.freeTrialText
+    setText('free-trial-note', lc.freeTrialNote)
+    if (lc.freeTrialLink?.text) document.getElementById('free-trial-link').textContent = lc.freeTrialLink.text
+  }
+
+  // Mockup
+  setText('mockup-school', c.mockup?.schoolName)
+  setText('mockup-clock', c.mockup?.clock)
+  setText('mockup-start', c.mockup?.startTime)
+  setText('mockup-end', c.mockup?.endTime)
+  setText('mockup-caption', c.mockup?.caption)
+
+  // Quotes
+  setText('quotes-eyebrow', c.quotes?.eyebrow)
+  setText('quotes-heading', c.quotes?.heading)
+  setText('quotes-subtext', c.quotes?.subtext)
+  if (c.quotes?.items) renderQuotes(c.quotes.items)
+
+  // Logos
+  setText('logos-label', c.logos?.label)
+  if (c.logos?.items) renderLogos(c.logos.items)
+
+  // How it works
+  setText('how-eyebrow', c.howItWorks?.eyebrow)
+  setText('how-heading', c.howItWorks?.heading)
+  setText('how-subtext', c.howItWorks?.subtext)
+  if (c.howItWorks?.steps) renderSteps(c.howItWorks.steps)
+
+  // Pricing
+  setText('pricing-eyebrow', c.pricing?.eyebrow)
+  setText('pricing-heading', c.pricing?.heading)
+  setText('pricing-subtext', c.pricing?.subtext)
+  if (c.pricing?.plans) renderPricing(c.pricing.plans)
+
+  // Contact
+  setText('contact-eyebrow', c.contact?.eyebrow)
+  setText('contact-heading', c.contact?.heading)
+  setText('contact-emphasis', c.contact?.headingEmphasis)
+  setText('contact-end', c.contact?.headingEnd)
+  setText('contact-subtext', c.contact?.subtext)
+  setText('contact-note', c.contact?.note)
+  if (c.contact?.form?.successText) setText('contact-success-text', c.contact.form.successText)
+  if (c.contact?.form?.submitText) document.getElementById('contact-submit').textContent = c.contact.form.submitText
+
+  // Footer
+  setText('footer-tagline', c.footer?.tagline)
+  setText('footer-copyright', c.footer?.copyright)
+
+  // Re-run scroll reveal after content update
+  initScrollReveal()
+}).catch((err) => {
+  console.warn('Sanity fetch failed, using fallback content:', err.message)
+})
+
+
+// ══════════════════════════════════════════════════════════════
+//  SCROLL REVEAL
+// ══════════════════════════════════════════════════════════════
+function initScrollReveal() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        entry.target.style.transitionDelay = `${i * 0.05}s`
+        entry.target.classList.add('visible')
+        observer.unobserve(entry.target)
+      }
+    })
+  }, { threshold: 0.12 })
+
+  document.querySelectorAll('.reveal:not(.visible)').forEach((el) => observer.observe(el))
+}
+initScrollReveal()
+
+
+// ══════════════════════════════════════════════════════════════
+//  AUTH — Sign In
+// ══════════════════════════════════════════════════════════════
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const errorEl = document.getElementById('login-error')
+  const submitBtn = document.getElementById('login-submit')
+  errorEl.style.display = 'none'
+  submitBtn.disabled = true
+  submitBtn.style.opacity = '0.6'
+  submitBtn.textContent = 'Signing in...'
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: document.getElementById('email').value.trim(),
+    password: document.getElementById('password').value,
+  })
+
+  if (error) {
+    errorEl.textContent = error.message
+    errorEl.style.display = 'block'
+    submitBtn.disabled = false
+    submitBtn.style.opacity = '1'
+    submitBtn.textContent = 'Access my classroom →'
+  } else {
+    location.href = '/app'
+  }
+})
+
+
+// ══════════════════════════════════════════════════════════════
+//  CONTACT FORM
+// ══════════════════════════════════════════════════════════════
+document.getElementById('contact-form').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const form = e.target
+  const errorEl = document.getElementById('contact-error')
+  const submitBtn = document.getElementById('contact-submit')
+  errorEl.style.display = 'none'
+  submitBtn.disabled = true
+  submitBtn.textContent = 'Sending...'
+
+  const fd = new FormData(form)
+  const { error } = await supabase.from('contact_messages').insert({
+    name: fd.get('name'),
+    position: fd.get('position'),
+    school: fd.get('school'),
+    message: fd.get('message'),
+  })
+
+  if (error) {
+    errorEl.textContent = 'Something went wrong. Please try again or email us directly.'
+    errorEl.style.display = 'block'
+    submitBtn.disabled = false
+    submitBtn.textContent = 'Send message'
+  } else {
+    form.style.display = 'none'
+    document.getElementById('contact-success').style.display = 'flex'
+  }
+})
+
+
+// ══════════════════════════════════════════════════════════════
+//  NAV BUTTONS
+// ══════════════════════════════════════════════════════════════
+document.getElementById('nav-signin-btn').addEventListener('click', () => {
+  document.getElementById('login-card').scrollIntoView({ behavior: 'smooth' })
+})
+
+document.getElementById('nav-trial-btn').addEventListener('click', () => {
+  location.href = '/app?mode=trial'
+})
+
+document.getElementById('free-trial-btn').addEventListener('click', () => {
+  location.href = '/app?mode=trial'
+})
+</script>
+</body>
+</html>
