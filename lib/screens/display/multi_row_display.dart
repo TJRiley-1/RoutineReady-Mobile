@@ -25,61 +25,120 @@ class MultiRowDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rows = displaySettings.rows;
-    final tasksPerRow =
-        (timeline.tasks.length / rows).ceil();
+    final tasksPerRow = (timeline.tasks.length / rows).ceil();
+    final isSnake = displaySettings.pathDirection == 'snake';
+    const scale = 0.8;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: List.generate(rows, (rowIndex) {
         final startIdx = rowIndex * tasksPerRow;
-        final endIdx = min((rowIndex + 1) * tasksPerRow, timeline.tasks.length);
+        final endIdx =
+            min((rowIndex + 1) * tasksPerRow, timeline.tasks.length);
 
         if (startIdx >= timeline.tasks.length) return const SizedBox.shrink();
 
+        final isReversed = isSnake && rowIndex.isOdd;
+        final rowTasks = timeline.tasks.sublist(startIdx, endIdx);
+        final displayTasks = isReversed ? rowTasks.reversed.toList() : rowTasks;
+
+        // Calculate row start/end times
+        final rowStartTime = _calculateTimeAtIndex(startIdx);
+        final rowEndTime = _calculateTimeAtIndex(endIdx);
+
         return Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                children: List.generate(endIdx - startIdx, (i) {
-                  final index = startIdx + i;
-                  final task = timeline.tasks[index];
-                  final isCurrent = index == currentTaskIndex;
-                  final isPast = index < currentTaskIndex;
-                  final transitionWidth = task.width * 1.0;
-
-                  return Row(
-                    children: [
-                      TaskCard(
-                        task: task,
-                        theme: theme,
-                        isCurrent: isCurrent,
-                        isPast: isPast,
-                        index: index,
+                children: [
+                  // Row start time
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 4),
+                    child: Text(
+                      isReversed ? rowEndTime : rowStartTime,
+                      style: TextStyle(
+                        fontSize: 10 * scale,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade600,
                       ),
-                      if (i < endIdx - startIdx - 1) ...[
-                        const SizedBox(width: 4),
-                        TransitionIndicator(
-                          displaySettings: displaySettings,
-                          theme: theme,
-                          taskDuration: task.duration,
-                          elapsed: elapsedInTask,
-                          isPast: isPast,
-                          isActive: isCurrent,
-                          width: transitionWidth,
+                    ),
+                  ),
+                  ...List.generate(displayTasks.length, (i) {
+                    final actualIndex = isReversed
+                        ? endIdx - 1 - i
+                        : startIdx + i;
+                    final task = displayTasks[i];
+                    final isCurrent = actualIndex == currentTaskIndex;
+                    final isPast = actualIndex < currentTaskIndex;
+                    final transitionWidth = task.width * scale;
+
+                    return Row(
+                      children: [
+                        Transform.scale(
+                          scale: scale,
+                          child: TaskCard(
+                            task: task,
+                            theme: theme,
+                            isCurrent: isCurrent,
+                            isPast: isPast,
+                            index: actualIndex,
+                          ),
                         ),
-                        const SizedBox(width: 4),
+                        if (i < displayTasks.length - 1) ...[
+                          const SizedBox(width: 2),
+                          TransitionIndicator(
+                            displaySettings: displaySettings,
+                            theme: theme,
+                            taskDuration: task.duration,
+                            elapsed: elapsedInTask,
+                            isPast: isPast,
+                            isActive: isCurrent,
+                            width: transitionWidth,
+                          ),
+                          const SizedBox(width: 2),
+                        ],
                       ],
-                    ],
-                  );
-                }),
+                    );
+                  }),
+                  // Row end time
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 4),
+                    child: Text(
+                      isReversed ? rowStartTime : rowEndTime,
+                      style: TextStyle(
+                        fontSize: 10 * scale,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         );
       }),
     );
+  }
+
+  String _calculateTimeAtIndex(int taskIndex) {
+    if (taskIndex <= 0) return timeline.startTime;
+
+    final parts = timeline.startTime.split(':');
+    var totalMinutes =
+        int.parse(parts[0]) * 60 + int.parse(parts[1]);
+
+    for (var i = 0; i < taskIndex && i < timeline.tasks.length; i++) {
+      totalMinutes += timeline.tasks[i].duration;
+    }
+
+    final h = (totalMinutes ~/ 60) % 24;
+    final m = totalMinutes % 60;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
   }
 }

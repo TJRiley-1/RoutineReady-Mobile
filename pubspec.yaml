@@ -29,3 +29,41 @@ flutter:
 
   assets:
     - assets/images/
+
+  fonts:
+    - family: TwinklCursiveLooped
+      fonts:
+        - asset: assets/fonts/TwinklCursiveLooped-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/TwinklCursiveLooped-Light.ttf
+          weight: 300
+        - asset: assets/fonts/TwinklCursiveLooped-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/TwinklCursiveLooped-Semibold.ttf
+          weight: 600
+        - asset: assets/fonts/TwinklCursiveLooped-Bold.ttf
+          weight: 700
+    - family: TwinklCursiveUnlooped
+      fonts:
+        - asset: assets/fonts/TwinklCursiveUnlooped-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/TwinklCursiveUnlooped-Light.ttf
+          weight: 300
+        - asset: assets/fonts/TwinklCursiveUnlooped-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/TwinklCursiveUnlooped-Semibold.ttf
+          weight: 600
+        - asset: assets/fonts/TwinklCursiveUnlooped-Bold.ttf
+          weight: 700
+    - family: TwinklPrecursive
+      fonts:
+        - asset: assets/fonts/TwinklPrecursive-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/TwinklPrecursive-Light.ttf
+          weight: 300
+        - asset: assets/fonts/TwinklPrecursive-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/TwinklPrecursive-Semibold.ttf
+          weight: 600
+        - asset: assets/fonts/TwinklPrecursive-Bold.ttf
+          weight: 700

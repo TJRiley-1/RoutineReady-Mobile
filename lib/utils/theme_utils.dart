@@ -83,8 +83,23 @@ FontWeight mapFontWeight(String weight) {
   }
 }
 
+String? resolveFontFamily(String fontFamily) {
+  switch (fontFamily) {
+    case 'twinkl-cursive-looped':
+      return 'TwinklCursiveLooped';
+    case 'twinkl-cursive-unlooped':
+      return 'TwinklCursiveUnlooped';
+    case 'twinkl-precursive':
+      return 'TwinklPrecursive';
+    case 'sans-serif':
+    default:
+      return null; // use system default
+  }
+}
+
 TextStyle getThemeTextStyle(ThemeConfig theme, double baseFontSize) {
   return TextStyle(
+    fontFamily: resolveFontFamily(theme.fontFamily),
     fontWeight: mapFontWeight(theme.fontWeight),
     fontSize: baseFontSize,
     letterSpacing: 0,

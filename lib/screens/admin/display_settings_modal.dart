@@ -86,10 +86,39 @@ class _DisplaySettingsModalState extends ConsumerState<DisplaySettingsModal> {
                         Slider(
                           value: _settings.rows.toDouble(),
                           min: 1,
-                          max: 4,
-                          divisions: 3,
+                          max: (_settings.height / 250).floor().clamp(1, 6).toDouble(),
+                          divisions: ((_settings.height / 250).floor().clamp(1, 6) - 1).clamp(1, 5),
                           onChanged: (v) =>
                               _update(_settings.copyWith(rows: v.round())),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Path Direction',
+                            style: TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(
+                                value: 'sequential',
+                                label: Text('Sequential')),
+                            ButtonSegment(
+                                value: 'snake',
+                                label: Text('Snake')),
+                          ],
+                          selected: {_settings.pathDirection},
+                          onSelectionChanged: (v) =>
+                              _update(_settings.copyWith(
+                                  pathDirection: v.first)),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            _settings.pathDirection == 'snake'
+                                ? 'Rows alternate: left→right, right→left'
+                                : 'All rows flow left→right',
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.brandTextMuted),
+                          ),
                         ),
                         const SizedBox(height: 16),
                       ],

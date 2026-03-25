@@ -234,6 +234,223 @@ class _ThemeEditorModalState extends ConsumerState<ThemeEditorModal> {
                             ),
 
                             const SizedBox(height: 16),
+                            // Border width
+                            const Text('Border Width',
+                                style:
+                                    TextStyle(fontWeight: FontWeight.w600)),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Slider(
+                                    value: _theme.borderWidthValue,
+                                    min: 1,
+                                    max: 6,
+                                    divisions: 5,
+                                    onChanged: (v) => setState(() =>
+                                        _theme = _theme.copyWith(
+                                            cardBorderWidth:
+                                                '${v.round()}px')),
+                                  ),
+                                ),
+                                Text('${_theme.borderWidthValue.round()}px',
+                                    style: const TextStyle(fontSize: 12)),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+                            // Font family
+                            const Text('Font Style',
+                                style:
+                                    TextStyle(fontWeight: FontWeight.w600)),
+                            DropdownButton<String>(
+                              value: _theme.fontFamily,
+                              isExpanded: true,
+                              items: const [
+                                DropdownMenuItem(
+                                    value: 'sans-serif',
+                                    child: Text('System Default')),
+                                DropdownMenuItem(
+                                    value: 'twinkl-cursive-looped',
+                                    child: Text('Twinkl Cursive Looped')),
+                                DropdownMenuItem(
+                                    value: 'twinkl-cursive-unlooped',
+                                    child: Text('Twinkl Cursive Unlooped')),
+                                DropdownMenuItem(
+                                    value: 'twinkl-precursive',
+                                    child: Text('Twinkl Precursive')),
+                              ],
+                              onChanged: (v) {
+                                if (v != null) {
+                                  setState(() => _theme =
+                                      _theme.copyWith(fontFamily: v));
+                                }
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+                            // Font weight
+                            const Text('Font Weight',
+                                style:
+                                    TextStyle(fontWeight: FontWeight.w600)),
+                            DropdownButton<String>(
+                              value: _theme.fontWeight,
+                              isExpanded: true,
+                              items: const [
+                                DropdownMenuItem(
+                                    value: '300',
+                                    child: Text('Light')),
+                                DropdownMenuItem(
+                                    value: '400',
+                                    child: Text('Regular')),
+                                DropdownMenuItem(
+                                    value: '500',
+                                    child: Text('Medium')),
+                                DropdownMenuItem(
+                                    value: '600',
+                                    child: Text('Semi-Bold')),
+                                DropdownMenuItem(
+                                    value: '700',
+                                    child: Text('Bold')),
+                                DropdownMenuItem(
+                                    value: '800',
+                                    child: Text('Extra Bold')),
+                              ],
+                              onChanged: (v) {
+                                if (v != null) {
+                                  setState(() => _theme =
+                                      _theme.copyWith(fontWeight: v));
+                                }
+                              },
+                            ),
+
+                            const SizedBox(height: 8),
+                            // Font transform
+                            SwitchListTile(
+                              title: const Text('UPPERCASE Text'),
+                              value: _theme.fontTransform == 'uppercase',
+                              onChanged: (v) => setState(() => _theme =
+                                  _theme.copyWith(
+                                      fontTransform:
+                                          v ? 'uppercase' : 'none')),
+                            ),
+
+                            const SizedBox(height: 16),
+                            // Theme emoji
+                            const Text('Theme Emoji',
+                                style:
+                                    TextStyle(fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                '\u{1F3A8}', '\u{2705}', '\u{1F30A}',
+                                '\u{1F332}', '\u{2600}', '\u{1F49C}',
+                                '\u{26AB}', '\u{26A1}', '\u{1F31F}',
+                                '\u{1F3B5}', '\u{1F680}', '\u{1F308}',
+                              ].map((emoji) {
+                                final isSelected = _theme.emoji == emoji;
+                                return GestureDetector(
+                                  onTap: () => setState(() =>
+                                      _theme = _theme.copyWith(
+                                          emoji: emoji)),
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppColors.brandPrimary
+                                            : AppColors.brandBorder,
+                                        width: isSelected ? 2 : 1,
+                                      ),
+                                      borderRadius:
+                                          BorderRadius.circular(8),
+                                    ),
+                                    child: Center(
+                                        child: Text(emoji,
+                                            style: const TextStyle(
+                                                fontSize: 20))),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+
+                            const SizedBox(height: 16),
+                            // Dot/tick colors
+                            const Text('Progress Dot Colors',
+                                style:
+                                    TextStyle(fontWeight: FontWeight.w600)),
+                            _ColorPicker(
+                              label: 'Completed',
+                              currentColor: _theme.tickPastColor,
+                              onChanged: (c) => setState(() =>
+                                  _theme = _theme.copyWith(
+                                      tickPastColor: c)),
+                            ),
+                            _ColorPicker(
+                              label: 'Current',
+                              currentColor: _theme.tickCurrentColor,
+                              onChanged: (c) => setState(() =>
+                                  _theme = _theme.copyWith(
+                                      tickCurrentColor: c)),
+                            ),
+                            _ColorPicker(
+                              label: 'Upcoming',
+                              currentColor: _theme.tickFutureColor,
+                              onChanged: (c) => setState(() =>
+                                  _theme = _theme.copyWith(
+                                      tickFutureColor: c)),
+                            ),
+
+                            const SizedBox(height: 16),
+                            // Progress line colors
+                            const Text('Progress Line Gradient',
+                                style:
+                                    TextStyle(fontWeight: FontWeight.w600)),
+                            _ColorPicker(
+                              label: 'Line Start',
+                              currentColor:
+                                  _theme.progressLineColors['from'] ??
+                                      '#22c55e',
+                              onChanged: (c) => setState(() =>
+                                  _theme = _theme.copyWith(
+                                      progressLineColors: {
+                                    ..._theme.progressLineColors,
+                                    'from': c,
+                                  })),
+                            ),
+                            _ColorPicker(
+                              label: 'Line End',
+                              currentColor:
+                                  _theme.progressLineColors['to'] ??
+                                      '#3b82f6',
+                              onChanged: (c) => setState(() =>
+                                  _theme = _theme.copyWith(
+                                      progressLineColors: {
+                                    ..._theme.progressLineColors,
+                                    'to': c,
+                                  })),
+                            ),
+                            _ColorPicker(
+                              label: 'Line Background',
+                              currentColor: _theme.progressBgColor,
+                              onChanged: (c) => setState(() =>
+                                  _theme = _theme.copyWith(
+                                      progressBgColor: c)),
+                            ),
+
+                            const SizedBox(height: 16),
+                            // Current task overlay
+                            _ColorPicker(
+                              label: 'Current Task Overlay',
+                              currentColor: _theme.currentBgOverlay,
+                              onChanged: (c) => setState(() =>
+                                  _theme = _theme.copyWith(
+                                      currentBgOverlay: c)),
+                            ),
+
+                            const SizedBox(height: 16),
                             SwitchListTile(
                               title: const Text('Enhanced Current Border'),
                               value: _theme.currentBorderEnhance,
@@ -284,9 +501,10 @@ class _ThemeEditorModalState extends ConsumerState<ThemeEditorModal> {
                                   ),
                                 ],
                               ),
-                              child: const Text('Current Task',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold)),
+                              child: Text('Current Task',
+                                  style: getThemeTextStyle(_theme, 16)
+                                      .copyWith(
+                                          fontWeight: FontWeight.bold)),
                             ),
                             const SizedBox(height: 16),
                             // Sample regular task
@@ -303,7 +521,8 @@ class _ThemeEditorModalState extends ConsumerState<ThemeEditorModal> {
                                   width: _theme.borderWidthValue,
                                 ),
                               ),
-                              child: const Text('Regular Task'),
+                              child: Text('Regular Task',
+                                  style: getThemeTextStyle(_theme, 14)),
                             ),
                             const SizedBox(height: 16),
                             // Progress dots

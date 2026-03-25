@@ -9,6 +9,7 @@ import '../models/weekly_schedule.dart';
 import '../models/theme_config.dart';
 import '../data/defaults.dart';
 import '../data/preset_themes.dart';
+import '../utils/time_utils.dart';
 import 'auth_provider.dart';
 
 final schoolProvider =
@@ -191,7 +192,7 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
       );
     }).toList();
 
-    return SchoolState(
+    var result = SchoolState(
       school: school,
       displaySettings: displaySettings,
       timeline: timeline,
@@ -201,6 +202,60 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
       customThemes: customThemes,
       activeTemplateId: activeTemplateId,
     );
+
+    // Auto-load today's template from weekly schedule
+    final todayKey = getDayKey(DateTime.now().weekday);
+    final todayTemplateId =
+        todayKey != null ? weeklySchedule.getForDay(todayKey) : null;
+    if (todayTemplateId != null && todayTemplateId != activeTemplateId) {
+      final todayTemplate = templates
+          .where((t) => t.id.toString() == todayTemplateId)
+          .firstOrNull;
+      if (todayTemplate != null) {
+        final autoTimeline = ActiveTimeline(
+          startTime: todayTemplate.startTime,
+          endTime: todayTemplate.endTime,
+          tasks: todayTemplate.tasks
+              .map((t) => Task.fromJson(t.toJson()))
+              .toList(),
+        );
+        result = result.copyWith(
+          timeline: autoTimeline,
+          activeTemplateId: todayTemplateId,
+        );
+        // Persist the auto-loaded timeline
+        _autoSaveTimeline(school.id, autoTimeline, todayTemplateId);
+      }
+    }
+
+    return result;
+  }
+
+  Future<void> _autoSaveTimeline(
+      String schoolId, ActiveTimeline timeline, String? templateId) async {
+    final payload = {
+      'school_id': schoolId,
+      'template_id': templateId,
+      'start_time': timeline.startTime,
+      'end_time': timeline.endTime,
+      'tasks_json': timeline.tasks.map((t) => t.toJson()).toList(),
+    };
+
+    final existing = await _client
+        .from('active_timeline')
+        .select('id')
+        .eq('school_id', schoolId)
+        .limit(1)
+        .maybeSingle();
+
+    if (existing != null) {
+      await _client
+          .from('active_timeline')
+          .update(payload)
+          .eq('id', existing['id']);
+    } else {
+      await _client.from('active_timeline').insert(payload);
+    }
   }
 
   Future<void> createSchool({
