@@ -37,28 +37,43 @@ class TimelineEditor extends ConsumerWidget {
         child: Column(
           children: [
             // Header
-            Row(
-              children: [
-                const Spacer(),
-                const Text(
-                  'Edit Tasks',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.brandText,
+            Builder(builder: (context) {
+              final isFree = ref.watch(schoolProvider).valueOrNull?.isFreeMode ?? false;
+              final atLimit = isFree && timeline.tasks.length >= 5;
+              return Row(
+                children: [
+                  const Spacer(),
+                  const Text(
+                    'Edit Tasks',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brandText,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: () => _addTask(ref),
-                  icon: const Icon(LucideIcons.plus, size: 18),
-                  label: const Text('Add Task'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandSuccess,
+                  if (isFree) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      '${timeline.tasks.length}/5',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: atLimit ? AppColors.brandError : AppColors.brandTextMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: atLimit ? null : () => _addTask(context, ref),
+                    icon: const Icon(LucideIcons.plus, size: 18),
+                    label: const Text('Add Task'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandSuccess,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              );
+            }),
             const SizedBox(height: 16),
 
             // Scrollable task list
@@ -165,7 +180,17 @@ class TimelineEditor extends ConsumerWidget {
     );
   }
 
-  void _addTask(WidgetRef ref) {
+  void _addTask(BuildContext context, WidgetRef ref) {
+    final isFree = ref.read(schoolProvider).valueOrNull?.isFreeMode ?? false;
+    if (isFree && timeline.tasks.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Free plan is limited to 5 tasks. Upgrade for unlimited tasks.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     final newTask = Task(
       id: DateTime.now().millisecondsSinceEpoch,
       type: 'text',
@@ -211,6 +236,7 @@ class TimelineEditor extends ConsumerWidget {
       builder: (_) => TaskEditorModal(
         task: task,
         schoolId: schoolId,
+        isFreeMode: ref.read(schoolProvider).valueOrNull?.isFreeMode ?? false,
         onSave: (updatedTask) {
           final updated = timeline.copyWith(
             tasks: timeline.tasks

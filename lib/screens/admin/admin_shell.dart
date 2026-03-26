@@ -206,31 +206,33 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                   child: Row(
                     children: [
                       // Left buttons
-                      ElevatedButton.icon(
-                        onPressed: state.hasUnsavedChanges && !state.isSaving
-                            ? _saveAll
-                            : null,
-                        icon: const Icon(LucideIcons.save, size: 18),
-                        label: Text(state.isSaving
-                            ? 'Saving...'
-                            : state.hasUnsavedChanges
-                                ? 'Save Changes'
-                                : 'Saved'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: state.hasUnsavedChanges
-                              ? AppColors.brandAccent
-                              : Colors.grey.shade200,
-                          foregroundColor: state.hasUnsavedChanges
-                              ? AppColors.brandPrimaryDark
-                              : Colors.grey,
+                      if (!state.isFreeMode) ...[
+                        ElevatedButton.icon(
+                          onPressed: state.hasUnsavedChanges && !state.isSaving
+                              ? _saveAll
+                              : null,
+                          icon: const Icon(LucideIcons.save, size: 18),
+                          label: Text(state.isSaving
+                              ? 'Saving...'
+                              : state.hasUnsavedChanges
+                                  ? 'Save Changes'
+                                  : 'Saved'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: state.hasUnsavedChanges
+                                ? AppColors.brandAccent
+                                : Colors.grey.shade200,
+                            foregroundColor: state.hasUnsavedChanges
+                                ? AppColors.brandPrimaryDark
+                                : Colors.grey,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: _showSaveAsTemplate,
-                        icon: const Icon(LucideIcons.bookmarkPlus, size: 18),
-                        label: const Text('Save as Template'),
-                      ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: _showSaveAsTemplate,
+                          icon: const Icon(LucideIcons.bookmarkPlus, size: 18),
+                          label: const Text('Save as Template'),
+                        ),
+                      ],
                       const SizedBox(width: 8),
                       ElevatedButton.icon(
                         onPressed: _showDisplaySettings,
@@ -282,8 +284,44 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                 ),
               ),
 
+              // Free tier banner
+              if (state.isFreeMode)
+                Container(
+                  color: AppColors.brandPrimaryBg,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.sparkles,
+                          color: AppColors.brandPrimary, size: 18),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Free plan — 5 tasks, preset themes only, no saving. Upgrade for full features!',
+                          style: TextStyle(
+                            color: AppColors.brandPrimary,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      OutlinedButton(
+                        onPressed: () {
+                          // TODO: link to upgrade flow
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.brandPrimary,
+                          side: const BorderSide(color: AppColors.brandPrimary),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                        child: const Text('Upgrade'),
+                      ),
+                    ],
+                  ),
+                ),
+
               // Unsaved changes banner
-              if (state.hasUnsavedChanges)
+              if (state.hasUnsavedChanges && !state.isFreeMode)
                 Container(
                   color: Colors.amber.shade50,
                   padding: const EdgeInsets.symmetric(
@@ -318,12 +356,14 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // Weekly Schedule
-                      TemplateManager(
-                        templates: state.templates,
-                        weeklySchedule: state.weeklySchedule,
-                      ),
-                      const SizedBox(height: 16),
+                      // Weekly Schedule (paid only)
+                      if (!state.isFreeMode) ...[
+                        TemplateManager(
+                          templates: state.templates,
+                          weeklySchedule: state.weeklySchedule,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       // Task Editor
                       TimelineEditor(
                         timeline: state.timeline,

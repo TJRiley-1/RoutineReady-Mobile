@@ -4,6 +4,7 @@ import 'config/theme_constants.dart';
 import 'providers/auth_provider.dart';
 import 'providers/school_provider.dart';
 import 'providers/session_provider.dart';
+import 'providers/subscription_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/setup_wizard_screen.dart';
 import 'screens/mode_select/mode_select_screen.dart';
@@ -53,6 +54,7 @@ class _AuthenticatedRouter extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final schoolState = ref.watch(schoolProvider);
     final sessionMode = ref.watch(sessionModeProvider);
+    final isPaid = ref.watch(isPaidProvider);
 
     return schoolState.when(
       loading: () => const Scaffold(
@@ -74,9 +76,20 @@ class _AuthenticatedRouter extends ConsumerWidget {
         ),
       ),
       data: (state) {
-        // No school = needs setup
+        // No school record:
+        // - Paid users → setup wizard
+        // - Free users → mode select with in-memory defaults (school provider handles this)
         if (state == null) {
-          return const SetupWizardScreen();
+          if (isPaid) {
+            return const SetupWizardScreen();
+          }
+          // Free user: initialize in-memory data and go to mode select
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(schoolProvider.notifier).initFreeMode();
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         // No mode selected = mode select screen

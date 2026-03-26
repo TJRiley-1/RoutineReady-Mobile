@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/school.dart';
@@ -26,6 +27,7 @@ class SchoolState {
   final String? activeTemplateId;
   final bool hasUnsavedChanges;
   final bool isSaving;
+  final bool isFreeMode;
 
   SchoolState({
     required this.school,
@@ -38,6 +40,7 @@ class SchoolState {
     this.activeTemplateId,
     this.hasUnsavedChanges = false,
     this.isSaving = false,
+    this.isFreeMode = false,
   });
 
   SchoolState copyWith({
@@ -51,6 +54,7 @@ class SchoolState {
     String? activeTemplateId,
     bool? hasUnsavedChanges,
     bool? isSaving,
+    bool? isFreeMode,
   }) {
     return SchoolState(
       school: school ?? this.school,
@@ -63,12 +67,19 @@ class SchoolState {
       activeTemplateId: activeTemplateId ?? this.activeTemplateId,
       hasUnsavedChanges: hasUnsavedChanges ?? this.hasUnsavedChanges,
       isSaving: isSaving ?? this.isSaving,
+      isFreeMode: isFreeMode ?? this.isFreeMode,
     );
   }
 }
 
 class SchoolNotifier extends AsyncNotifier<SchoolState?> {
   SupabaseClient get _client => ref.read(supabaseClientProvider);
+
+  // Debounce timers — prevents hammering Supabase on rapid changes (e.g. slider drags)
+  Timer? _displaySettingsDebounce;
+  Timer? _timelineDebounce;
+  Timer? _customThemesDebounce;
+  static const _debounceDelay = Duration(milliseconds: 800);
 
   @override
   Future<SchoolState?> build() async {
@@ -79,9 +90,28 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
 
   /// Re-fetch all data from Supabase (e.g. after realtime reconnection).
   Future<void> reload() async {
+    final current = state.valueOrNull;
+    if (current != null && current.isFreeMode) return; // Free mode: no DB to reload from
     final user = ref.read(currentUserProvider);
     if (user == null) return;
     state = AsyncData(await _loadAllData(user.id));
+  }
+
+  /// Initialize in-memory-only state for free tier users (no DB reads/writes).
+  void initFreeMode() {
+    if (state.valueOrNull != null) return; // Already initialized
+    state = AsyncData(SchoolState(
+      school: School(
+        id: 'free-local',
+        ownerId: '',
+        schoolName: '',
+        className: '',
+        teacherName: '',
+      ),
+      timeline: defaultTimelineConfig,
+      weeklySchedule: WeeklySchedule(),
+      isFreeMode: true,
+    ));
   }
 
   Future<SchoolState?> _loadAllData(String userId) async {
@@ -343,21 +373,30 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
       timeline: timeline,
       hasUnsavedChanges: true,
     ));
-    _saveTimelineToDb(timeline, current.activeTemplateId);
+    _timelineDebounce?.cancel();
+    _timelineDebounce = Timer(_debounceDelay, () {
+      _saveTimelineToDb(timeline, current.activeTemplateId);
+    });
   }
 
   void updateDisplaySettings(DisplaySettings settings) {
     final current = state.valueOrNull;
     if (current == null) return;
     state = AsyncData(current.copyWith(displaySettings: settings));
-    _saveDisplaySettingsToDb(settings, current.currentTheme);
+    _displaySettingsDebounce?.cancel();
+    _displaySettingsDebounce = Timer(_debounceDelay, () {
+      _saveDisplaySettingsToDb(settings, current.currentTheme);
+    });
   }
 
   void updateCurrentTheme(String themeId) {
     final current = state.valueOrNull;
     if (current == null) return;
     state = AsyncData(current.copyWith(currentTheme: themeId));
-    _saveDisplaySettingsToDb(current.displaySettings, themeId);
+    _displaySettingsDebounce?.cancel();
+    _displaySettingsDebounce = Timer(_debounceDelay, () {
+      _saveDisplaySettingsToDb(current.displaySettings, themeId);
+    });
   }
 
   void updateTemplates(List<TaskTemplate> templates) {
@@ -382,7 +421,10 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     final current = state.valueOrNull;
     if (current == null) return;
     state = AsyncData(current.copyWith(customThemes: themes));
-    _saveCustomThemesToDb(themes);
+    _customThemesDebounce?.cancel();
+    _customThemesDebounce = Timer(_debounceDelay, () {
+      _saveCustomThemesToDb(themes);
+    });
   }
 
   void setActiveTemplateId(String? id) {
@@ -392,6 +434,11 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
   }
 
   Future<void> saveAll() async {
+    // Cancel any pending debounced saves — we're saving everything now
+    _displaySettingsDebounce?.cancel();
+    _timelineDebounce?.cancel();
+    _customThemesDebounce?.cancel();
+
     final current = state.valueOrNull;
     if (current == null) return;
 
@@ -530,8 +577,12 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
 
   // --- Private DB helpers ---
 
+  /// Returns true if DB writes should be skipped (free tier).
+  bool get _skipDbWrites => state.valueOrNull?.isFreeMode ?? false;
+
   Future<void> _saveDisplaySettingsToDb(
       DisplaySettings settings, String theme) async {
+    if (_skipDbWrites) return;
     final current = state.valueOrNull;
     if (current == null) return;
 
@@ -560,6 +611,7 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
 
   Future<void> _saveTimelineToDb(
       ActiveTimeline timeline, String? templateId) async {
+    if (_skipDbWrites) return;
     final current = state.valueOrNull;
     if (current == null) return;
 
@@ -595,6 +647,7 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
 
   Future<Map<String, String>> _saveTemplatesToDb(
       List<TaskTemplate> allTemplates) async {
+    if (_skipDbWrites) return {};
     final current = state.valueOrNull;
     if (current == null) return {};
 
@@ -639,6 +692,7 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
   }
 
   Future<void> _saveWeeklyScheduleToDb(WeeklySchedule schedule) async {
+    if (_skipDbWrites) return;
     final current = state.valueOrNull;
     if (current == null) return;
 
@@ -665,6 +719,7 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
   }
 
   Future<void> _saveCustomThemesToDb(List<ThemeConfig> themes) async {
+    if (_skipDbWrites) return;
     final current = state.valueOrNull;
     if (current == null) return;
 

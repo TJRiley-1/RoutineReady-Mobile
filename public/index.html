@@ -340,6 +340,14 @@ const fallback = {
 // ══════════════════════════════════════════════════════════════
 //  RENDER DYNAMIC SECTIONS
 // ══════════════════════════════════════════════════════════════
+// Escape HTML to prevent XSS from CMS content
+function esc(str) {
+  if (!str) return ''
+  const d = document.createElement('div')
+  d.textContent = str
+  return d.innerHTML
+}
+
 function checkSvg() {
   return '<svg viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" /></svg>'
 }
@@ -349,13 +357,13 @@ function renderQuotes(items) {
   grid.innerHTML = items.map((q) => `
     <div class="quote-card reveal">
       <div class="quote-mark">\u201C</div>
-      <p class="quote-text">${q.text}</p>
-      <div class="quote-stat">${q.stat}</div>
+      <p class="quote-text">${esc(q.text)}</p>
+      <div class="quote-stat">${esc(q.stat)}</div>
       <div class="quote-author">
-        <div class="author-avatar">${q.avatar}</div>
+        <div class="author-avatar">${esc(q.avatar)}</div>
         <div>
-          <div class="author-name">${q.name}</div>
-          <div class="author-role">${q.role}</div>
+          <div class="author-name">${esc(q.name)}</div>
+          <div class="author-role">${esc(q.role)}</div>
         </div>
       </div>
     </div>
@@ -365,7 +373,7 @@ function renderQuotes(items) {
 function renderLogos(items) {
   const row = document.getElementById('logos-row')
   row.innerHTML = items.map((l) => `
-    <div class="school-logo-placeholder"><span>${l.name}</span></div>
+    <div class="school-logo-placeholder"><span>${esc(l.name)}</span></div>
   `).join('')
 }
 
@@ -374,9 +382,9 @@ function renderSteps(steps) {
   grid.innerHTML = steps.map((s, i) => `
     <div class="step-card reveal">
       <div class="step-number">${i + 1}</div>
-      <h3 class="step-title">${s.title}</h3>
-      <p class="step-description">${s.description}</p>
-      <div class="step-detail">${s.detail}</div>
+      <h3 class="step-title">${esc(s.title)}</h3>
+      <p class="step-description">${esc(s.description)}</p>
+      <div class="step-detail">${esc(s.detail)}</div>
     </div>
   `).join('')
 }
@@ -385,21 +393,21 @@ function renderPricing(plans) {
   const grid = document.getElementById('pricing-grid')
   grid.innerHTML = plans.map((plan) => `
     <div class="pricing-card ${plan.featured ? 'featured' : ''}">
-      <div class="pricing-plan">${plan.name}</div>
-      <div class="pricing-price">${plan.price} <span>${plan.priceSuffix}</span></div>
-      <p class="pricing-desc">${plan.description}</p>
+      <div class="pricing-plan">${esc(plan.name)}</div>
+      <div class="pricing-price">${esc(plan.price)} <span>${esc(plan.priceSuffix)}</span></div>
+      <p class="pricing-desc">${esc(plan.description)}</p>
       <div class="feature-list">
         ${plan.features.map((f) => `
           <div class="feature-item ${!f.included ? 'muted' : ''}">
             ${f.included
               ? `<div class="feature-check">${checkSvg()}</div>`
               : '<div class="feature-x">&#10005;</div>'}
-            ${f.text}
+            ${esc(f.text)}
           </div>
         `).join('')}
       </div>
-      <button class="pricing-cta ${plan.ctaStyle}" onclick="${plan.ctaStyle === 'solid' ? "document.getElementById('contact').scrollIntoView({behavior:'smooth'})" : "location.href='/app?mode=trial'"}">${plan.ctaText}</button>
-      ${plan.note ? `<p class="pricing-note">${plan.note}</p>` : ''}
+      <button class="pricing-cta ${plan.ctaStyle === 'solid' ? 'solid' : 'outline'}" onclick="${plan.ctaStyle === 'solid' ? "document.getElementById('contact').scrollIntoView({behavior:'smooth'})" : "location.href='/app?mode=trial'"}">${esc(plan.ctaText)}</button>
+      ${plan.note ? `<p class="pricing-note">${esc(plan.note)}</p>` : ''}
     </div>
   `).join('')
 }
@@ -427,7 +435,7 @@ sanityClient.fetch(QUERY).then((c) => {
   // Nav
   if (c.nav?.links) {
     const ul = document.getElementById('nav-links')
-    ul.innerHTML = c.nav.links.map((l) => `<li><a href="${l.href}">${l.label}</a></li>`).join('')
+    ul.innerHTML = c.nav.links.map((l) => `<li><a href="${esc(l.href)}">${esc(l.label)}</a></li>`).join('')
   }
   if (c.nav?.signInText) document.getElementById('nav-signin-btn').textContent = c.nav.signInText
   if (c.nav?.freeTrialText) document.getElementById('nav-trial-btn').textContent = c.nav.freeTrialText

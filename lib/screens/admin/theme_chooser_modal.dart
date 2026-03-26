@@ -70,7 +70,7 @@ class ThemeChooserModal extends ConsumerWidget {
                           );
                         }).toList(),
                       ),
-                      if (customThemes.isNotEmpty) ...[
+                      if (!schoolState.isFreeMode && customThemes.isNotEmpty) ...[
                         const SizedBox(height: 24),
                         const Text('Custom Themes',
                             style: TextStyle(fontWeight: FontWeight.w600)),
@@ -92,14 +92,16 @@ class ThemeChooserModal extends ConsumerWidget {
                           }).toList(),
                         ),
                       ],
-                      const SizedBox(height: 24),
-                      Center(
-                        child: ElevatedButton.icon(
-                          onPressed: onCreateCustom,
-                          icon: const Icon(Icons.add),
-                          label: const Text('Create Custom Theme'),
+                      if (!schoolState.isFreeMode) ...[
+                        const SizedBox(height: 24),
+                        Center(
+                          child: ElevatedButton.icon(
+                            onPressed: onCreateCustom,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Create Custom Theme'),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

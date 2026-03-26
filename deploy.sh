@@ -62,6 +62,17 @@ cat > "$OUTPUT_DIR/.vercel/output/config.json" <<'EOF'
     { "handle": "filesystem" },
     { "src": "/app/(.*)", "dest": "/app/index.html" },
     { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    }
   ]
 }
 EOF

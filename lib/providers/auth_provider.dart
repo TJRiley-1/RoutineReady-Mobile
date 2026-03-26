@@ -34,6 +34,10 @@ class AuthActions {
     return _client.auth.signInWithPassword(email: email, password: password);
   }
 
+  Future<AuthResponse> signUp(String email, String password) async {
+    return _client.auth.signUp(email: email, password: password);
+  }
+
   Future<void> signOut() async {
     await _client.auth.signOut();
   }
