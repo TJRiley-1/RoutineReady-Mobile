@@ -9,6 +9,7 @@ import '../../providers/school_provider.dart';
 import '../../providers/session_provider.dart';
 import '../../utils/theme_utils.dart';
 import '../../utils/time_utils.dart';
+import '../../widgets/admin/onboarding_tour.dart';
 import 'timeline_editor.dart';
 import 'template_manager.dart';
 import 'display_settings_modal.dart';
@@ -27,12 +28,35 @@ class _AdminShellState extends ConsumerState<AdminShell> {
   Timer? _timer;
   int _currentTaskIndex = -1;
   double _elapsedInTask = 0;
+  bool _showTour = false;
+
+  // GlobalKeys for tour spotlight targets
+  final _keyTaskEditor = GlobalKey();
+  final _keyAddTask = GlobalKey();
+  final _keyDisplaySettings = GlobalKey();
+  final _keyChangeTheme = GlobalKey();
+  final _keySaveButton = GlobalKey();
+  final _keyExitAdmin = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateProgress());
     _updateProgress();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final seen = await hasSeenOnboarding();
+    if (!seen && mounted) {
+      // Delay to let the UI render so GlobalKeys have valid contexts
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted) setState(() => _showTour = true);
+    }
+  }
+
+  void startTour() {
+    setState(() => _showTour = true);
   }
 
   @override
@@ -169,7 +193,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
   void _showUserSettings() {
     showDialog(
       context: context,
-      builder: (_) => const UserSettingsModal(),
+      builder: (_) => UserSettingsModal(onStartTour: startTour),
     );
   }
 
@@ -194,7 +218,9 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         final theme = getActiveTheme(state.currentTheme, state.customThemes);
 
         return Scaffold(
-          body: Column(
+          body: Stack(
+            children: [
+              Column(
             children: [
               // Toolbar
               Container(
@@ -208,6 +234,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                       // Left buttons
                       if (!state.isFreeMode) ...[
                         ElevatedButton.icon(
+                          key: _keySaveButton,
                           onPressed: state.hasUnsavedChanges && !state.isSaving
                               ? _saveAll
                               : null,
@@ -235,12 +262,14 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                       ],
                       const SizedBox(width: 8),
                       ElevatedButton.icon(
+                        key: _keyDisplaySettings,
                         onPressed: _showDisplaySettings,
                         icon: const Icon(LucideIcons.monitor, size: 18),
                         label: const Text('Display Settings'),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton.icon(
+                        key: _keyChangeTheme,
                         onPressed: _showThemeChooser,
                         icon: const Icon(LucideIcons.palette, size: 18),
                         label: const Text('Change Theme'),
@@ -275,6 +304,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                       ),
                       const SizedBox(width: 8),
                       OutlinedButton.icon(
+                        key: _keyExitAdmin,
                         onPressed: _exitAdmin,
                         icon: const Icon(LucideIcons.arrowLeft, size: 18),
                         label: const Text('Exit Admin'),
@@ -287,6 +317,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
               // Free tier banner
               if (state.isFreeMode)
                 Container(
+                  key: _keySaveButton, // Reuse key for tour step 6 (free variant)
                   color: AppColors.brandPrimaryBg,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 10),
@@ -371,6 +402,8 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                         theme: theme,
                         currentTaskIndex: _currentTaskIndex,
                         elapsedInTask: _elapsedInTask,
+                        tourKeyEditor: _keyTaskEditor,
+                        tourKeyAddTask: _keyAddTask,
                       ),
                     ],
                   ),
@@ -378,8 +411,71 @@ class _AdminShellState extends ConsumerState<AdminShell> {
               ),
             ],
           ),
+
+              // Onboarding tour overlay
+              if (_showTour)
+                OnboardingTourOverlay(
+                  steps: _buildTourSteps(state.isFreeMode),
+                  onComplete: () => setState(() => _showTour = false),
+                ),
+            ],
+          ),
         );
       },
     );
+  }
+
+  List<TourStep> _buildTourSteps(bool isFreeMode) {
+    return [
+      TourStep(
+        targetKey: _keyTaskEditor,
+        title: 'Your Timeline',
+        description:
+            'This is your daily schedule. Set the start time so the display '
+            'knows when your first task begins, then add tasks with names, '
+            'icons, and durations.',
+      ),
+      TourStep(
+        targetKey: _keyAddTask,
+        title: 'Add Tasks',
+        description:
+            'Add a new task to your timeline. Each task has a name, an optional '
+            'icon, and a duration. Tap an existing task card to edit its details.',
+      ),
+      TourStep(
+        targetKey: _keyDisplaySettings,
+        title: 'Display Settings',
+        description:
+            'Configure how your timeline appears on screen. Choose between '
+            'horizontal, multi-row, or auto-pan layouts. Set up banners, '
+            'clock display, and screen resolution.',
+      ),
+      TourStep(
+        targetKey: _keyChangeTheme,
+        title: 'Visual Themes',
+        description:
+            'Select a visual theme for your classroom display. '
+            '${isFreeMode ? 'Preset themes are included with the free plan. Upgrade to create custom themes.' : 'Choose a preset theme or create your own with custom colours, fonts, and styles.'}',
+      ),
+      TourStep(
+        targetKey: _keySaveButton,
+        title: isFreeMode ? 'Free Plan' : 'Save Your Work',
+        description: isFreeMode
+            ? 'You are on the free plan. Changes are stored in your browser '
+              'for this session. Upgrade to save your schedules, sync across '
+              'devices, and access all features.'
+            : 'Save your changes to sync them across all connected displays '
+              'in real time. Any device logged into your classroom will '
+              'update automatically.',
+      ),
+      TourStep(
+        targetKey: _keyExitAdmin,
+        title: 'View Your Display',
+        description:
+            'When your schedule is ready, exit the admin panel to see the '
+            'classroom display. Open this same link on your classroom screen '
+            'and select Display Mode to show the timeline.',
+      ),
+    ];
   }
 }

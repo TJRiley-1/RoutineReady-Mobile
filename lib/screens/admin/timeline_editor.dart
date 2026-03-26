@@ -19,6 +19,8 @@ class TimelineEditor extends ConsumerWidget {
   final ThemeConfig theme;
   final int currentTaskIndex;
   final double elapsedInTask;
+  final GlobalKey? tourKeyEditor;
+  final GlobalKey? tourKeyAddTask;
 
   const TimelineEditor({
     super.key,
@@ -27,11 +29,14 @@ class TimelineEditor extends ConsumerWidget {
     required this.theme,
     required this.currentTaskIndex,
     required this.elapsedInTask,
+    this.tourKeyEditor,
+    this.tourKeyAddTask,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Card(
+      key: tourKeyEditor,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -64,6 +69,7 @@ class TimelineEditor extends ConsumerWidget {
                   ],
                   const Spacer(),
                   ElevatedButton.icon(
+                    key: tourKeyAddTask,
                     onPressed: atLimit ? null : () => _addTask(context, ref),
                     icon: const Icon(LucideIcons.plus, size: 18),
                     label: const Text('Add Task'),

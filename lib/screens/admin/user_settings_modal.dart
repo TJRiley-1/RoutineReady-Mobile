@@ -6,9 +6,12 @@ import '../../config/theme_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/school_provider.dart';
 import '../../providers/session_provider.dart';
+import '../../widgets/admin/onboarding_tour.dart';
 
 class UserSettingsModal extends ConsumerStatefulWidget {
-  const UserSettingsModal({super.key});
+  final VoidCallback? onStartTour;
+
+  const UserSettingsModal({super.key, this.onStartTour});
 
   @override
   ConsumerState<UserSettingsModal> createState() => _UserSettingsModalState();
@@ -198,6 +201,23 @@ class _UserSettingsModalState extends ConsumerState<UserSettingsModal> {
                           child: const Text('Edit Setup Info'),
                         ),
                       ],
+
+                      const SizedBox(height: 24),
+                      const Text('Help',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          await resetOnboarding();
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            widget.onStartTour?.call();
+                          }
+                        },
+                        icon: const Icon(Icons.help_outline, size: 18),
+                        label: const Text('Take a tour'),
+                      ),
 
                       const SizedBox(height: 24),
                       const Text('Data Management',
