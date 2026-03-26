@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/landing.css" />
+  <!-- @sanity/visual-editing v1.8.22 bundles its own React — no import map needed -->
 </head>
 <body>
 <div class="landing-page" id="landing">
@@ -234,7 +235,7 @@
 
 <script type="module">
 // ── Sanity client (with stega support for visual editing) ──
-import { createClient } from 'https://esm.sh/@sanity/client@7?bundle'
+import { createClient } from 'https://esm.sh/@sanity/client@7'
 
 const SANITY_PROJECT_ID = 'a81t0e2b'
 const SANITY_DATASET = 'production'
@@ -250,7 +251,7 @@ const sanityClient = createClient({
   dataset: SANITY_DATASET,
   apiVersion: '2024-01-01',
   useCdn: !isStudioPreview,
-  perspective: isStudioPreview ? 'previewDrafts' : 'published',
+  perspective: isStudioPreview ? 'drafts' : 'published',
   stega: {
     enabled: isStudioPreview,
     studioUrl: 'https://routineready.sanity.studio',
@@ -262,7 +263,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 // ── Visual editing overlay (only in Sanity Studio iframe) ──
 if (isStudioPreview) {
-  import('https://esm.sh/@sanity/visual-editing@2?bundle').then(({ enableVisualEditing }) => {
+  import('https://esm.sh/@sanity/visual-editing@1.8.22').then(({ enableVisualEditing }) => {
     enableVisualEditing({
       history: {
         update: (update) => {
