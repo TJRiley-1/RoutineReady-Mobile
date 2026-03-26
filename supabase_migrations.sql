@@ -197,3 +197,42 @@ DO $$ BEGIN
     -- Use service_role key in a separate admin tool to read contact messages
   END IF;
 END $$;
+
+-- ═══════════════════════════════════════════════════════════════
+-- 9. Extend subscriptions for RevenueCat + multi-source support
+-- ═══════════════════════════════════════════════════════════════
+
+-- User-level subscriptions (App Store / RevenueCat)
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users ON DELETE CASCADE;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS source text DEFAULT 'manual';
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS product_id text;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS period_type text;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+
+-- school_id is now nullable (user-level subs won't have one initially)
+ALTER TABLE subscriptions ALTER COLUMN school_id DROP NOT NULL;
+
+-- One active RevenueCat subscription per user
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_user_source
+  ON subscriptions (user_id, source)
+  WHERE user_id IS NOT NULL AND source = 'revenuecat';
+
+-- Updated RLS: users can read their own user-level OR school-level subscriptions
+DROP POLICY IF EXISTS "Users read own subscription" ON subscriptions;
+CREATE POLICY "Users read own subscription"
+  ON subscriptions FOR SELECT
+  USING (
+    user_id = auth.uid()
+    OR school_id IN (SELECT id FROM schools WHERE owner_id = auth.uid())
+  );
+
+-- updated_at trigger
+CREATE OR REPLACE FUNCTION update_subscriptions_updated_at()
+RETURNS trigger AS $$
+BEGIN NEW.updated_at = now(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS set_subscriptions_updated_at ON subscriptions;
+CREATE TRIGGER set_subscriptions_updated_at
+  BEFORE UPDATE ON subscriptions
+  FOR EACH ROW EXECUTE FUNCTION update_subscriptions_updated_at();
