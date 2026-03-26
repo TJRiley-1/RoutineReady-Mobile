@@ -204,10 +204,13 @@ class TimelineEditor extends ConsumerWidget {
   }
 
   void _editTask(BuildContext context, WidgetRef ref, Task task) {
+    final schoolId = ref.read(schoolProvider).valueOrNull?.school.id;
+    if (schoolId == null) return;
     showDialog(
       context: context,
       builder: (_) => TaskEditorModal(
         task: task,
+        schoolId: schoolId,
         onSave: (updatedTask) {
           final updated = timeline.copyWith(
             tasks: timeline.tasks

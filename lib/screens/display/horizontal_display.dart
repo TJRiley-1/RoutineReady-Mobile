@@ -8,7 +8,7 @@ import '../../utils/time_utils.dart';
 import '../../widgets/display/task_card.dart';
 import '../../widgets/display/transition_indicator.dart';
 
-class HorizontalDisplay extends StatelessWidget {
+class HorizontalDisplay extends StatefulWidget {
   final ActiveTimeline timeline;
   final DisplaySettings displaySettings;
   final ThemeConfig theme;
@@ -25,10 +25,59 @@ class HorizontalDisplay extends StatelessWidget {
   });
 
   @override
+  State<HorizontalDisplay> createState() => _HorizontalDisplayState();
+}
+
+class _HorizontalDisplayState extends State<HorizontalDisplay> {
+  final ScrollController _scrollController = ScrollController();
+  int _lastScrolledToIndex = -1;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(HorizontalDisplay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.currentTaskIndex != _lastScrolledToIndex &&
+        widget.currentTaskIndex >= 0) {
+      _scrollToCurrentTask();
+    }
+  }
+
+  void _scrollToCurrentTask() {
+    if (!_scrollController.hasClients) return;
+    _lastScrolledToIndex = widget.currentTaskIndex;
+
+    // Calculate approximate scroll position:
+    // Each task = task.width + transition(task.width*1.5) + gaps(16)
+    // Plus the start time card (~140 + 8)
+    double offset = 148; // start time card width + gap
+    for (var i = 0; i < widget.currentTaskIndex; i++) {
+      final task = widget.timeline.tasks[i];
+      offset += task.width + (task.width * 1.5) + 16; // card + transition + gaps
+    }
+
+    // Center the current task on screen
+    final screenWidth = _scrollController.position.viewportDimension;
+    final targetOffset = (offset - screenWidth / 2 +
+            widget.timeline.tasks[widget.currentTaskIndex].width / 2)
+        .clamp(0.0, _scrollController.position.maxScrollExtent);
+
+    _scrollController.animateTo(
+      targetOffset,
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final accentColor = parseHexColor(theme.timeCardAccentColor);
-    final endAccentColor = theme.timeCardAccentColorAlt != null
-        ? parseHexColor(theme.timeCardAccentColorAlt!)
+    final accentColor = parseHexColor(widget.theme.timeCardAccentColor);
+    final endAccentColor = widget.theme.timeCardAccentColorAlt != null
+        ? parseHexColor(widget.theme.timeCardAccentColorAlt!)
         : accentColor;
 
     return SizedBox(
@@ -37,39 +86,40 @@ class HorizontalDisplay extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
         child: SingleChildScrollView(
+          controller: _scrollController,
           scrollDirection: Axis.horizontal,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Start time card
               _TimeCard(
-                time: timeline.startTime,
+                time: widget.timeline.startTime,
                 label: 'Start',
                 accentColor: accentColor,
               ),
               const SizedBox(width: 8),
               // Tasks with transitions
-              ...List.generate(timeline.tasks.length, (index) {
-                final task = timeline.tasks[index];
-                final isCurrent = index == currentTaskIndex;
-                final isPast = index < currentTaskIndex;
+              ...List.generate(widget.timeline.tasks.length, (index) {
+                final task = widget.timeline.tasks[index];
+                final isCurrent = index == widget.currentTaskIndex;
+                final isPast = index < widget.currentTaskIndex;
                 final transitionWidth = (task.width * 1.5);
 
                 return Row(
                   children: [
                     TaskCard(
                       task: task,
-                      theme: theme,
+                      theme: widget.theme,
                       isCurrent: isCurrent,
                       isPast: isPast,
                       index: index,
                     ),
                     const SizedBox(width: 4),
                     TransitionIndicator(
-                      displaySettings: displaySettings,
-                      theme: theme,
+                      displaySettings: widget.displaySettings,
+                      theme: widget.theme,
                       taskDuration: task.duration,
-                      elapsed: elapsedInTask,
+                      elapsed: widget.elapsedInTask,
                       isPast: isPast,
                       isActive: isCurrent,
                       width: transitionWidth,
@@ -80,7 +130,8 @@ class HorizontalDisplay extends StatelessWidget {
               }),
               // End time card
               _TimeCard(
-                time: calculateEndTime(timeline.startTime, timeline.tasks),
+                time: calculateEndTime(
+                    widget.timeline.startTime, widget.timeline.tasks),
                 label: 'End',
                 accentColor: endAccentColor,
               ),

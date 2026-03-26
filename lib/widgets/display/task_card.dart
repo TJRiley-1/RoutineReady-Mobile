@@ -96,7 +96,7 @@ class TaskCard extends StatelessWidget {
                       width: (taskWidth * 0.7).clamp(0, 128),
                       height: (taskHeight * 0.6).clamp(0, 128),
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Icon(
+                      errorBuilder: (_, _, _) => Icon(
                         Icons.image_not_supported,
                         size: iconSize,
                         color: Colors.grey,

@@ -79,3 +79,121 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- NOTE: pg_cron must be enabled in your Supabase project (Database > Extensions)
 -- After enabling, run:
 -- SELECT cron.schedule('cleanup-stale-sessions', '*/5 * * * *', 'SELECT cleanup_stale_sessions()');
+
+-- ═══════════════════════════════════════════════════════════════
+-- 8. ROW LEVEL SECURITY — all tables must be protected before launch
+--
+-- Safe to re-run: DROP POLICY IF EXISTS before each CREATE POLICY
+-- ═══════════════════════════════════════════════════════════════
+
+-- ── schools ──
+-- Users can only access their own school record
+ALTER TABLE schools ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users select own school" ON schools;
+CREATE POLICY "Users select own school"
+  ON schools FOR SELECT
+  USING (owner_id = auth.uid());
+
+DROP POLICY IF EXISTS "Users insert own school" ON schools;
+CREATE POLICY "Users insert own school"
+  ON schools FOR INSERT
+  WITH CHECK (owner_id = auth.uid());
+
+DROP POLICY IF EXISTS "Users update own school" ON schools;
+CREATE POLICY "Users update own school"
+  ON schools FOR UPDATE
+  USING (owner_id = auth.uid())
+  WITH CHECK (owner_id = auth.uid());
+
+DROP POLICY IF EXISTS "Users delete own school" ON schools;
+CREATE POLICY "Users delete own school"
+  ON schools FOR DELETE
+  USING (owner_id = auth.uid());
+
+-- ── Helper function: check if school belongs to current user ──
+-- Used by all child tables to avoid repeating the subquery
+CREATE OR REPLACE FUNCTION user_owns_school(p_school_id uuid)
+RETURNS boolean AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM schools WHERE id = p_school_id AND owner_id = auth.uid()
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- ── templates ──
+ALTER TABLE templates ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users manage own templates" ON templates;
+CREATE POLICY "Users manage own templates"
+  ON templates FOR ALL
+  USING (user_owns_school(school_id))
+  WITH CHECK (user_owns_school(school_id));
+
+-- ── tasks ──
+-- Tasks belong to templates; verify ownership through the template's school_id
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users manage own tasks" ON tasks;
+CREATE POLICY "Users manage own tasks"
+  ON tasks FOR ALL
+  USING (
+    template_id IN (
+      SELECT id FROM templates WHERE user_owns_school(school_id)
+    )
+  )
+  WITH CHECK (
+    template_id IN (
+      SELECT id FROM templates WHERE user_owns_school(school_id)
+    )
+  );
+
+-- ── active_timeline ──
+ALTER TABLE active_timeline ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users manage own timeline" ON active_timeline;
+CREATE POLICY "Users manage own timeline"
+  ON active_timeline FOR ALL
+  USING (user_owns_school(school_id))
+  WITH CHECK (user_owns_school(school_id));
+
+-- ── display_settings ──
+ALTER TABLE display_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users manage own display settings" ON display_settings;
+CREATE POLICY "Users manage own display settings"
+  ON display_settings FOR ALL
+  USING (user_owns_school(school_id))
+  WITH CHECK (user_owns_school(school_id));
+
+-- ── weekly_schedules ──
+ALTER TABLE weekly_schedules ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users manage own weekly schedules" ON weekly_schedules;
+CREATE POLICY "Users manage own weekly schedules"
+  ON weekly_schedules FOR ALL
+  USING (user_owns_school(school_id))
+  WITH CHECK (user_owns_school(school_id));
+
+-- ── custom_themes ──
+ALTER TABLE custom_themes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users manage own custom themes" ON custom_themes;
+CREATE POLICY "Users manage own custom themes"
+  ON custom_themes FOR ALL
+  USING (user_owns_school(school_id))
+  WITH CHECK (user_owns_school(school_id));
+
+-- ── contact_messages (if table exists from web app) ──
+-- Anyone can submit a contact form (even unauthenticated via landing page)
+-- Only service_role can read messages (admin dashboard, not in this app)
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'contact_messages') THEN
+    ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Anyone can insert contact messages" ON contact_messages;
+    CREATE POLICY "Anyone can insert contact messages"
+      ON contact_messages FOR INSERT
+      WITH CHECK (true);
+    -- No SELECT/UPDATE/DELETE policy = nobody can read via anon/authenticated key
+    -- Use service_role key in a separate admin tool to read contact messages
+  END IF;
+END $$;

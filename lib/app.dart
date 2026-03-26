@@ -35,7 +35,7 @@ class _AppRouter extends ConsumerWidget {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => const LoginScreen(),
+      error: (_, _) => const LoginScreen(),
       data: (state) {
         if (state.session == null) {
           return const LoginScreen();

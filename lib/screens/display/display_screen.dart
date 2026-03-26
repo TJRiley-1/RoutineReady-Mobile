@@ -52,9 +52,9 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
       ref.read(realtimeProvider).subscribe(schoolState.school.id);
     }
 
-    // Start time tracking (every second)
+    // Update progress every 500ms for smooth animations
     _timer =
-        Timer.periodic(const Duration(seconds: 1), (_) => _updateProgress());
+        Timer.periodic(const Duration(milliseconds: 500), (_) => _updateProgress());
     _updateProgress();
   }
 

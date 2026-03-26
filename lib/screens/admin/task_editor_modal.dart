@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import '../../config/theme_constants.dart';
 import '../../data/icon_library.dart';
 import '../../models/task.dart';
+import '../../utils/image_upload.dart';
 
 class TaskEditorModal extends StatefulWidget {
   final Task task;
   final ValueChanged<Task> onSave;
+  final String schoolId;
 
   const TaskEditorModal({
     super.key,
     required this.task,
     required this.onSave,
+    required this.schoolId,
   });
 
   @override
@@ -22,8 +25,10 @@ class _TaskEditorModalState extends State<TaskEditorModal> {
   late TextEditingController _contentController;
   late int _duration;
   late String? _icon;
+  late String? _imageUrl;
   late int _width;
   late int _height;
+  bool _uploading = false;
 
   @override
   void initState() {
@@ -32,6 +37,7 @@ class _TaskEditorModalState extends State<TaskEditorModal> {
     _contentController = TextEditingController(text: widget.task.content);
     _duration = widget.task.duration;
     _icon = widget.task.icon;
+    _imageUrl = widget.task.imageUrl;
     _width = widget.task.width;
     _height = widget.task.height;
   }
@@ -40,6 +46,48 @@ class _TaskEditorModalState extends State<TaskEditorModal> {
   void dispose() {
     _contentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    setState(() => _uploading = true);
+
+    final result = await pickAndUploadTaskImage(widget.schoolId);
+
+    if (!mounted) return;
+    setState(() => _uploading = false);
+
+    if (result.error == 'cancelled') return;
+
+    if (result.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.error!), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    if (result.isWarning) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Image uploaded but is large — consider using a smaller file for faster loading'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+
+    setState(() {
+      _imageUrl = result.publicUrl;
+      _type = 'image';
+    });
+  }
+
+  Future<void> _removeImage() async {
+    if (_imageUrl != null) {
+      deleteTaskImage(_imageUrl!);
+    }
+    setState(() {
+      _imageUrl = null;
+      if (_type == 'image') _type = 'text';
+    });
   }
 
   @override
@@ -122,6 +170,70 @@ class _TaskEditorModalState extends State<TaskEditorModal> {
                 ),
                 const SizedBox(height: 16),
 
+                // Image upload (shown when type is 'image' or always visible)
+                const Text('Task Image', style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                if (_imageUrl != null) ...[
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          _imageUrl!,
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(
+                            width: 120,
+                            height: 120,
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.broken_image, color: Colors.grey),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: _removeImage,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, size: 16, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: _uploading ? null : _pickImage,
+                    icon: const Icon(Icons.swap_horiz, size: 18),
+                    label: const Text('Replace image'),
+                  ),
+                ] else ...[
+                  OutlinedButton.icon(
+                    onPressed: _uploading ? null : _pickImage,
+                    icon: _uploading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add_photo_alternate, size: 18),
+                    label: Text(_uploading ? 'Uploading...' : 'Choose image'),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'JPG, PNG, GIF or WebP. Max 2MB.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+                const SizedBox(height: 16),
+
                 // Icon picker
                 const Text('Icon', style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
@@ -186,12 +298,13 @@ class _TaskEditorModalState extends State<TaskEditorModal> {
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: _uploading ? null : () {
                         widget.onSave(widget.task.copyWith(
                           type: _type,
                           content: _contentController.text,
                           duration: _duration,
                           icon: _icon,
+                          imageUrl: _imageUrl,
                           width: _width,
                           height: _height,
                         ));

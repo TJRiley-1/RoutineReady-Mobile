@@ -77,6 +77,13 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     return _loadAllData(user.id);
   }
 
+  /// Re-fetch all data from Supabase (e.g. after realtime reconnection).
+  Future<void> reload() async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+    state = AsyncData(await _loadAllData(user.id));
+  }
+
   Future<SchoolState?> _loadAllData(String userId) async {
     // 1. Load school
     final schoolRes = await _client
@@ -435,7 +442,7 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
       'school_name': schoolName,
       'class_name': className,
       'teacher_name': teacherName,
-      if (deviceName != null) 'device_name': deviceName,
+      if (deviceName != null) 'device_name': deviceName, // ignore: use_null_aware_elements
     }).eq('id', current.school.id);
 
     state = AsyncData(current.copyWith(

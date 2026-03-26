@@ -7,7 +7,7 @@ import '../../utils/theme_utils.dart';
 import '../../widgets/display/banner_bar.dart';
 import '../../widgets/display/transition_indicator.dart';
 
-class AutoPanDisplay extends StatelessWidget {
+class AutoPanDisplay extends StatefulWidget {
   final ActiveTimeline timeline;
   final DisplaySettings displaySettings;
   final ThemeConfig theme;
@@ -24,26 +24,35 @@ class AutoPanDisplay extends StatelessWidget {
   });
 
   @override
+  State<AutoPanDisplay> createState() => _AutoPanDisplayState();
+}
+
+class _AutoPanDisplayState extends State<AutoPanDisplay> {
+  @override
   Widget build(BuildContext context) {
     final currentTask =
-        currentTaskIndex >= 0 && currentTaskIndex < timeline.tasks.length
-            ? timeline.tasks[currentTaskIndex]
+        widget.currentTaskIndex >= 0 && widget.currentTaskIndex < widget.timeline.tasks.length
+            ? widget.timeline.tasks[widget.currentTaskIndex]
             : null;
-    final nextTask = currentTaskIndex + 1 < timeline.tasks.length
-        ? timeline.tasks[currentTaskIndex + 1]
+    final nextTask = widget.currentTaskIndex + 1 < widget.timeline.tasks.length
+        ? widget.timeline.tasks[widget.currentTaskIndex + 1]
         : null;
 
-    final borderColor = parseHexColor(theme.cardBorderColor);
-    final glowColor = parseHexColor(theme.currentGlowColor);
+    final borderColor = parseHexColor(widget.theme.cardBorderColor);
+    final glowColor = parseHexColor(widget.theme.currentGlowColor);
+    final remaining = ((currentTask?.duration ?? 0) - widget.elapsedInTask)
+        .clamp(0, double.infinity)
+        .floor();
+    final minuteWord = remaining == 1 ? 'Minute' : 'Minutes';
 
     return Column(
       children: [
         // Top Banner
         BannerBar(
-          imageUrl: displaySettings.topBannerImage,
-          height: displaySettings.topBannerHeight,
-          theme: theme,
-          showClock: displaySettings.showClock,
+          imageUrl: widget.displaySettings.topBannerImage,
+          height: widget.displaySettings.topBannerHeight,
+          theme: widget.theme,
+          showClock: widget.displaySettings.showClock,
           isTop: true,
         ),
 
@@ -56,15 +65,16 @@ class AutoPanDisplay extends StatelessWidget {
                 // Current task (flex 1)
                 Expanded(
                   flex: 1,
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
                     decoration: BoxDecoration(
-                      color: parseColorString(theme.currentBgOverlay),
-                      borderRadius: BorderRadius.circular(theme.borderRadius),
+                      color: parseColorString(widget.theme.currentBgOverlay),
+                      borderRadius: BorderRadius.circular(widget.theme.borderRadius),
                       border: Border.all(
-                        color: theme.currentBorderEnhance
+                        color: widget.theme.currentBorderEnhance
                             ? glowColor
                             : borderColor,
-                        width: theme.borderWidthValue * 2,
+                        width: widget.theme.borderWidthValue * 2,
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -74,56 +84,31 @@ class AutoPanDisplay extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: currentTask != null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'CURRENT TASK',
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 600),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: currentTask != null
+                          ? _TaskContent(
+                              key: ValueKey('current-${widget.currentTaskIndex}'),
+                              label: 'CURRENT TASK',
+                              labelColor: glowColor,
+                              task: currentTask,
+                              theme: widget.theme,
+                              iconColor: borderColor,
+                              iconSize: 80,
+                              fontSize: 36,
+                              durationFontSize: 24,
+                            )
+                          : const Center(
+                              key: ValueKey('no-task'),
+                              child: Text(
+                                'No current task',
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: glowColor,
-                                ),
+                                    fontSize: 24, color: Color(0xFF9CA3AF)),
                               ),
-                              const SizedBox(height: 16),
-                              if (currentTask.icon != null)
-                                Icon(
-                                  getIconData(currentTask.icon),
-                                  size: 80,
-                                  color: borderColor,
-                                ),
-                              const SizedBox(height: 16),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                child: Text(
-                                  theme.fontTransform == 'uppercase'
-                                      ? currentTask.content.toUpperCase()
-                                      : currentTask.content,
-                                  textAlign: TextAlign.center,
-                                  style: getThemeTextStyle(theme, 36).copyWith(
-                                    color: const Color(0xFF1F2937),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                '${currentTask.duration} min',
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  color: Color(0xFF6B7280),
-                                ),
-                              ),
-                            ],
-                          )
-                        : const Center(
-                            child: Text(
-                              'No current task',
-                              style: TextStyle(
-                                  fontSize: 24, color: Color(0xFF9CA3AF)),
                             ),
-                          ),
+                    ),
                   ),
                 ),
 
@@ -134,21 +119,25 @@ class AutoPanDisplay extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       TransitionIndicator(
-                        displaySettings: displaySettings,
-                        theme: theme,
+                        displaySettings: widget.displaySettings,
+                        theme: widget.theme,
                         taskDuration: currentTask?.duration ?? 30,
-                        elapsed: elapsedInTask,
+                        elapsed: widget.elapsedInTask,
                         isPast: false,
                         isActive: true,
                         width: MediaQuery.of(context).size.width * 0.4,
                       ),
                       const SizedBox(height: 32),
-                      Text(
-                        '${((currentTask?.duration ?? 0) - elapsedInTask).clamp(0, double.infinity).floor()} Minute Remaining',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF374151),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 400),
+                        child: Text(
+                          '$remaining $minuteWord Remaining',
+                          key: ValueKey(remaining),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF374151),
+                          ),
                         ),
                       ),
                     ],
@@ -158,13 +147,14 @@ class AutoPanDisplay extends StatelessWidget {
                 // Next task (flex 1)
                 Expanded(
                   flex: 1,
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
                     decoration: BoxDecoration(
-                      color: parseHexColor(theme.cardBgColor),
-                      borderRadius: BorderRadius.circular(theme.borderRadius),
+                      color: parseHexColor(widget.theme.cardBgColor),
+                      borderRadius: BorderRadius.circular(widget.theme.borderRadius),
                       border: Border.all(
                         color: borderColor,
-                        width: theme.borderWidthValue,
+                        width: widget.theme.borderWidthValue,
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -173,56 +163,31 @@ class AutoPanDisplay extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: nextTask != null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                'NEXT TASK',
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 600),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: nextTask != null
+                          ? _TaskContent(
+                              key: ValueKey('next-${widget.currentTaskIndex + 1}'),
+                              label: 'NEXT TASK',
+                              labelColor: const Color(0xFF9CA3AF),
+                              task: nextTask,
+                              theme: widget.theme,
+                              iconColor: borderColor,
+                              iconSize: 64,
+                              fontSize: 28,
+                              durationFontSize: 20,
+                            )
+                          : const Center(
+                              key: ValueKey('all-done'),
+                              child: Text(
+                                'All done!',
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF9CA3AF),
-                                ),
+                                    fontSize: 20, color: Color(0xFF9CA3AF)),
                               ),
-                              const SizedBox(height: 16),
-                              if (nextTask.icon != null)
-                                Icon(
-                                  getIconData(nextTask.icon),
-                                  size: 64,
-                                  color: borderColor,
-                                ),
-                              const SizedBox(height: 16),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                child: Text(
-                                  theme.fontTransform == 'uppercase'
-                                      ? nextTask.content.toUpperCase()
-                                      : nextTask.content,
-                                  textAlign: TextAlign.center,
-                                  style: getThemeTextStyle(theme, 28).copyWith(
-                                    color: const Color(0xFF374151),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                '${nextTask.duration} min',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  color: Color(0xFF9CA3AF),
-                                ),
-                              ),
-                            ],
-                          )
-                        : const Center(
-                            child: Text(
-                              'All done!',
-                              style: TextStyle(
-                                  fontSize: 20, color: Color(0xFF9CA3AF)),
                             ),
-                          ),
+                    ),
                   ),
                 ),
               ],
@@ -232,10 +197,93 @@ class AutoPanDisplay extends StatelessWidget {
 
         // Bottom Banner
         BannerBar(
-          imageUrl: displaySettings.bottomBannerImage,
-          height: displaySettings.bottomBannerHeight,
-          theme: theme,
+          imageUrl: widget.displaySettings.bottomBannerImage,
+          height: widget.displaySettings.bottomBannerHeight,
+          theme: widget.theme,
           isTop: false,
+        ),
+      ],
+    );
+  }
+}
+
+class _TaskContent extends StatelessWidget {
+  final String label;
+  final Color labelColor;
+  final dynamic task;
+  final ThemeConfig theme;
+  final Color iconColor;
+  final double iconSize;
+  final double fontSize;
+  final double durationFontSize;
+
+  const _TaskContent({
+    super.key,
+    required this.label,
+    required this.labelColor,
+    required this.task,
+    required this.theme,
+    required this.iconColor,
+    required this.iconSize,
+    required this.fontSize,
+    required this.durationFontSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: labelColor,
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (task.type == 'image' && task.imageUrl != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              task.imageUrl!,
+              width: iconSize,
+              height: iconSize,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Icon(
+                Icons.image_not_supported,
+                size: iconSize,
+                color: Colors.grey,
+              ),
+            ),
+          )
+        else if (task.icon != null)
+          Icon(
+            getIconData(task.icon),
+            size: iconSize,
+            color: iconColor,
+          ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            theme.fontTransform == 'uppercase'
+                ? task.content.toUpperCase()
+                : task.content,
+            textAlign: TextAlign.center,
+            style: getThemeTextStyle(theme, fontSize).copyWith(
+              color: const Color(0xFF1F2937),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          '${task.duration} min',
+          style: TextStyle(
+            fontSize: durationFontSize,
+            color: const Color(0xFF6B7280),
+          ),
         ),
       ],
     );

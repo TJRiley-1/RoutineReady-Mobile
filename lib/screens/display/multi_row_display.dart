@@ -46,11 +46,19 @@ class MultiRowDisplay extends StatelessWidget {
         final rowStartTime = _calculateTimeAtIndex(startIdx);
         final rowEndTime = _calculateTimeAtIndex(endIdx);
 
+        // Does this row contain the current task?
+        final currentIsInRow = currentTaskIndex >= startIdx && currentTaskIndex < endIdx;
+
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+            child: _AutoScrollRow(
+              scrollToActive: currentIsInRow,
+              currentLocalIndex: currentIsInRow
+                  ? (isReversed
+                      ? endIdx - 1 - currentTaskIndex
+                      : currentTaskIndex - startIdx)
+                  : -1,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -140,5 +148,69 @@ class MultiRowDisplay extends StatelessWidget {
     final h = (totalMinutes ~/ 60) % 24;
     final m = totalMinutes % 60;
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  }
+}
+
+/// A row that auto-scrolls to keep the active task visible.
+class _AutoScrollRow extends StatefulWidget {
+  final bool scrollToActive;
+  final int currentLocalIndex;
+  final Widget child;
+
+  const _AutoScrollRow({
+    required this.scrollToActive,
+    required this.currentLocalIndex,
+    required this.child,
+  });
+
+  @override
+  State<_AutoScrollRow> createState() => _AutoScrollRowState();
+}
+
+class _AutoScrollRowState extends State<_AutoScrollRow> {
+  final ScrollController _controller = ScrollController();
+  int _lastIndex = -1;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_AutoScrollRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.scrollToActive &&
+        widget.currentLocalIndex >= 0 &&
+        widget.currentLocalIndex != _lastIndex) {
+      _lastIndex = widget.currentLocalIndex;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToActive());
+    }
+  }
+
+  void _scrollToActive() {
+    if (!_controller.hasClients || _controller.position.maxScrollExtent == 0) return;
+
+    // Estimate position: each item ~200px wide at 0.8 scale
+    final approxItemWidth = 200 * 0.8 + 4; // task + gap
+    final offset = widget.currentLocalIndex * approxItemWidth;
+    final viewport = _controller.position.viewportDimension;
+    final target = (offset - viewport / 2 + approxItemWidth / 2)
+        .clamp(0.0, _controller.position.maxScrollExtent);
+
+    _controller.animateTo(
+      target,
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      controller: _controller,
+      scrollDirection: Axis.horizontal,
+      child: widget.child,
+    );
   }
 }
