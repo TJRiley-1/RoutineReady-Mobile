@@ -30,7 +30,7 @@
     </ul>
     <div class="nav-cta">
       <button class="btn-ghost" id="nav-signin-btn">Sign in</button>
-      <button class="btn-primary" id="nav-trial-btn">Free trial</button>
+      <button class="btn-primary" id="nav-trial-btn">Start free</button>
     </div>
   </nav>
 
@@ -71,10 +71,10 @@
 
         <div class="login-divider" id="login-divider">or</div>
 
-        <button class="btn-free-trial" id="free-trial-btn">✦ Try free — no account needed</button>
+        <button class="btn-free-trial" id="free-trial-btn">✦ Start free — create your account</button>
 
         <p class="free-trial-note">
-          <span id="free-trial-note">Free trial: up to 5 tasks · no saved schedules · browser only</span><br/>
+          <span id="free-trial-note">Free plan: up to 5 tasks · all display modes · upgrade anytime</span><br/>
           <a href="#pricing" id="free-trial-link">See full plan comparison →</a>
         </p>
       </div>
@@ -306,17 +306,17 @@ const fallback = {
   pricing: {
     plans: [
       {
-        name: 'Free Trial', price: '£0', priceSuffix: '/ no account needed',
-        description: 'Try Routine Ready directly in your browser. No sign-up required. Perfect for exploring the product before committing.',
+        name: 'Free Plan', price: '£0', priceSuffix: '/ forever',
+        description: 'Create a free account and explore Routine Ready. Perfect for trying it out before upgrading your classroom.',
         features: [
           { text: 'Up to 5 tasks per schedule', included: true },
           { text: 'Live timeline display', included: true },
           { text: 'Admin panel access', included: true },
+          { text: 'All display modes & preset themes', included: true },
           { text: 'No saved schedules', included: false },
-          { text: 'Resets when browser closes', included: false },
           { text: 'No image uploads', included: false },
         ],
-        ctaText: 'Try free in browser →', ctaStyle: 'outline', featured: false,
+        ctaText: 'Create free account →', ctaStyle: 'outline', featured: false,
       },
       {
         name: 'Full Access', price: 'Contact us', priceSuffix: '/ for pricing',
@@ -406,7 +406,7 @@ function renderPricing(plans) {
           </div>
         `).join('')}
       </div>
-      <button class="pricing-cta ${plan.ctaStyle === 'solid' ? 'solid' : 'outline'}" onclick="${plan.ctaStyle === 'solid' ? "document.getElementById('contact').scrollIntoView({behavior:'smooth'})" : "location.href='/app?mode=trial'"}">${esc(plan.ctaText)}</button>
+      <button class="pricing-cta ${plan.ctaStyle === 'solid' ? 'solid' : 'outline'}" onclick="${plan.ctaStyle === 'solid' ? "document.getElementById('contact').scrollIntoView({behavior:'smooth'})" : "location.href='/app?mode=signup'"}">${esc(plan.ctaText)}</button>
       ${plan.note ? `<p class="pricing-note">${esc(plan.note)}</p>` : ''}
     </div>
   `).join('')
@@ -599,11 +599,11 @@ document.getElementById('nav-signin-btn').addEventListener('click', () => {
 })
 
 document.getElementById('nav-trial-btn').addEventListener('click', () => {
-  location.href = '/app?mode=trial'
+  location.href = '/app?mode=signup'
 })
 
 document.getElementById('free-trial-btn').addEventListener('click', () => {
-  location.href = '/app?mode=trial'
+  location.href = '/app?mode=signup'
 })
 </script>
 </body>

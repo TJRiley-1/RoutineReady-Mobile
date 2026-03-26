@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme_constants.dart';
@@ -21,7 +22,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    // Check if arriving from landing page with ?mode=signup
+    final startOnSignup = kIsWeb &&
+        Uri.base.queryParameters['mode'] == 'signup';
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: startOnSignup ? 1 : 0,
+    );
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() => _error = null);
@@ -159,7 +167,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     dividerColor: Colors.transparent,
                     tabs: const [
                       Tab(text: 'Sign In'),
-                      Tab(text: 'Try Free'),
+                      Tab(text: 'Create Account'),
                     ],
                   ),
                 ),
@@ -248,7 +256,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     return Padding(
                       padding: const EdgeInsets.only(top: 16),
                       child: Text(
-                        'Free plan: 5 tasks, all display modes, no saving.\nUpgrade anytime for full features.',
+                        'Free plan includes 5 tasks, all display modes and preset themes.\nUpgrade anytime for saved schedules, templates and more.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
