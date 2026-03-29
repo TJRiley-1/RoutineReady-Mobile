@@ -29,72 +29,136 @@ Status key: `[ ]` = not started, `[~]` = in progress, `[x]` = complete
 - [x] Package name set: uk.co.routineready.app (Android + iOS)
 - [x] Android billing permission + FlutterFragmentActivity
 - [x] Privacy policy published at routineready.co.uk/privacy.html
+- [x] Delete account page published at routineready.co.uk/delete-account.html
 - [x] Vercel deployment: ./deploy.sh with --prebuilt, Git integration disconnected
 - [x] Landing page: Sanity CMS visual editing, standalone HTML
+- [x] Google Play Console: app created, 10/11 app info steps complete
+- [x] RevenueCat project created (RoutineReady)
 
 ---
 
-## Remaining — Priority Order
+## Remaining — Step-by-Step Launch Order
 
-### App Store & Play Store Assets
-- [ ] App icon (1024x1024 for iOS, 512x512 adaptive for Android)
-- [ ] Splash screen / launch screen
-- [ ] App Store screenshots (iPad Pro 12.9", iPad Pro 11")
-- [ ] Play Store screenshots (7" tablet, 10" tablet)
-- [ ] Play Store feature graphic (1024x500)
-- [ ] App Store metadata (title, description, keywords, category)
-- [ ] Play Store metadata (already drafted — needs icon/screenshots to submit)
+### Phase A: Web Launch (first platform to ship)
 
-### RevenueCat & Payments
-- [ ] Apple Developer account ($99/year) — needed for iOS + App Store
-- [ ] RevenueCat project created with Apple, Google, Web (Stripe) apps
-- [ ] Create products: monthly (£4.99), annual (£34.99), lifetime (£89.99)
-- [ ] Create entitlement: "pro" mapped to all products
-- [ ] Create offering with monthly/annual/lifetime packages
-- [ ] Add API keys to revenuecat_config.dart
-- [ ] Set REVENUECAT_WEBHOOK_SECRET in Supabase Edge Function env vars
-- [ ] Paywall UI: native on mobile, custom on web
-- [ ] Upgrade prompts at gated features (contextual, not annoying)
-- [ ] Test purchase flow: sandbox (iOS), test tracks (Android), test mode (Stripe)
-- [ ] Test subscription expiry → user reverts to free tier
-
-### School Setup Flow
-- [ ] Admin tool for you to create school accounts manually
-- [ ] School subscription includes admin access (no App Store sub needed)
-- [ ] Teacher links App Store subscription to existing school account
-- [ ] School pricing page or contact form on landing page
-
-### Device Auto-Detection
-- [ ] Auto-detect screen aspect ratio at launch
-- [ ] Auto-select display mode (horizontal for ultrawide, auto-pan for tablets)
-- [ ] Orientation handling across form factors
-
-### Platform Testing
-- [ ] Test on physical iPad (display + admin)
-- [ ] Test on physical Android tablet (display + admin)
+**A1. Build & test the web app**
 - [ ] Test web on Chrome, Firefox, Safari, Edge
 - [ ] Test ultrawide display (2560x1080)
 - [ ] Test multi-device sync end-to-end (admin edits → display updates <2s)
-- [ ] Test display slot enforcement
-- [ ] Test kiosk mode: Android immersive, iPad Guided Access, web fullscreen
+- [ ] Test kiosk mode: web fullscreen (Chromium)
 
-### Build & Deploy
-- [ ] iOS: provisioning profiles, certificates, TestFlight build
-- [ ] Android: signing key, internal testing track build
-- [ ] Android: content rating + data safety section in Play Console
-- [ ] App Store review submission
-- [ ] Play Store production release
+**A2. Stripe setup (web payments)**
+- [ ] Create Stripe account (if not already done)
+- [ ] Add Stripe app to RevenueCat project
+- [ ] Create Stripe products: monthly (£4.99), annual (£34.99), lifetime (£89.99)
+- [ ] Map Stripe products to RevenueCat `pro` entitlement
+- [ ] Add RevenueCat web API key to revenuecat_config.dart
+- [ ] Set REVENUECAT_WEBHOOK_SECRET in Supabase Edge Function env vars
+- [ ] Test Stripe purchase flow in test mode
 
-### Polish
+**A3. Paywall & upgrade prompts (web)**
+- [ ] Paywall UI: custom web paywall (Stripe checkout)
+- [ ] Upgrade prompts at gated features (contextual, not annoying)
+- [ ] Test subscription expiry → user reverts to free tier
+
+**A4. Polish**
+- [ ] Device auto-detection: auto-detect screen aspect ratio at launch
+- [ ] Auto-select display mode (horizontal for ultrawide, auto-pan for tablets)
 - [ ] Display capacity info in display settings
 - [ ] Task overflow warning
-- [ ] Backup as file download (.json)
-- [ ] Restore from file picker
-- [ ] Custom sprite image upload
-- [ ] Custom banner image upload
 - [ ] Unsaved changes warning on navigation
 
-### Test Suite
+**A5. School setup**
+- [ ] Admin tool to create school accounts manually
+- [ ] School subscription includes admin access (no App Store sub needed)
+- [ ] School pricing page or contact form on landing page
+
+**A6. Deploy web to pilot schools**
+- [ ] Final testing on pilot school hardware
+- [ ] Go live at routineready.co.uk/app
+
+---
+
+### Phase B: Android Launch (after web is stable)
+
+**B1. Build the APK/AAB**
+- [ ] Android signing key (upload keystore)
+- [ ] Build release AAB
+- [ ] Upload first AAB to Play Console internal testing track
+
+**B2. Play Console setup (requires uploaded build)**
+- [ ] Add Google Play service account JSON to RevenueCat (API access appears after first upload)
+- [ ] Create Play Store subscription products: monthly (£4.99), annual (£34.99)
+- [ ] Create Play Store in-app product: lifetime (£89.99)
+- [ ] Map Google Play products to RevenueCat `pro` entitlement
+- [ ] Create RevenueCat offering with monthly/annual/lifetime packages
+- [ ] Add RevenueCat Google API key to revenuecat_config.dart
+
+**B3. Store listing assets**
+- [ ] App icon (512x512 adaptive for Android)
+- [ ] Play Store screenshots (7" tablet, 10" tablet)
+- [ ] Play Store feature graphic (1024x500)
+- [ ] Splash screen / launch screen
+- [ ] Complete store listing (metadata already drafted)
+
+**B4. Android testing**
+- [ ] Test on physical Android tablet (display + admin)
+- [ ] Test kiosk mode: Android immersive
+- [ ] Test purchase flow: Google Play test tracks
+- [ ] Content rating + data safety section in Play Console
+- [ ] Orientation handling across form factors
+
+**B5. Android release**
+- [ ] Internal testing → closed testing → production release
+- [ ] Play Store production release
+
+---
+
+### Phase C: iOS / iPad Launch (after Android)
+
+**C1. Apple Developer setup**
+- [ ] Apple Developer account ($99/year)
+- [ ] Add Apple App Store app to RevenueCat project
+- [ ] Create App Store Connect app entry
+
+**C2. Build**
+- [ ] iOS provisioning profiles + certificates
+- [ ] Build IPA / TestFlight build
+
+**C3. App Store products**
+- [ ] Create App Store subscription products: monthly (£4.99), annual (£34.99)
+- [ ] Create App Store in-app purchase: lifetime (£89.99)
+- [ ] Map Apple products to RevenueCat `pro` entitlement
+- [ ] Add RevenueCat Apple API key to revenuecat_config.dart
+
+**C4. Store listing assets**
+- [ ] App icon (1024x1024 for iOS)
+- [ ] App Store screenshots (iPad Pro 12.9", iPad Pro 11")
+- [ ] App Store metadata (title, description, keywords, category)
+
+**C5. iOS testing**
+- [ ] Test on physical iPad (display + admin)
+- [ ] Test kiosk mode: iPad Guided Access
+- [ ] Test purchase flow: sandbox (iOS)
+- [ ] Teacher links App Store subscription to existing school account
+
+**C6. iOS release**
+- [ ] App Store review submission
+- [ ] App Store production release
+
+---
+
+### Ongoing (any phase)
+
+**Backup & restore**
+- [ ] Backup as file download (.json)
+- [ ] Restore from file picker
+
+**Customisation**
+- [ ] Custom sprite image upload
+- [ ] Custom banner image upload
+
+**Test suite**
 - [ ] time_utils.dart — task progress calculations
 - [ ] Display engine — rendering correctness
 - [ ] Auth flow — login/signup/session management
