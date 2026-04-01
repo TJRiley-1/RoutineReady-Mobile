@@ -109,32 +109,35 @@ class _ModeSelectScreenState extends ConsumerState<ModeSelectScreen> {
                     ),
                   ),
                 ],
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ModeCard(
-                        icon: LucideIcons.monitor,
-                        title: 'Display Mode',
-                        description:
-                            'Full-screen view for students.\nShows the daily schedule timeline.',
-                        color: AppColors.brandPrimary,
-                        isLoading: _isLoading,
-                        onTap: () => _selectMode('display'),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _ModeCard(
+                          icon: LucideIcons.monitor,
+                          title: 'Display Mode',
+                          description:
+                              'Full-screen view for students.\nShows the daily schedule timeline.',
+                          color: AppColors.brandPrimary,
+                          isLoading: _isLoading,
+                          onTap: () => _selectMode('display'),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 24),
-                    Expanded(
-                      child: _ModeCard(
-                        icon: LucideIcons.settings,
-                        title: 'Admin Mode',
-                        description:
-                            'Edit tasks, templates, themes, and display settings.',
-                        color: AppColors.brandAccent,
-                        isLoading: _isLoading,
-                        onTap: () => _selectMode('admin'),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: _ModeCard(
+                          icon: LucideIcons.settings,
+                          title: 'Admin Mode',
+                          description:
+                              'Edit tasks, templates, themes, and display settings.',
+                          color: AppColors.brandAccent,
+                          isLoading: _isLoading,
+                          onTap: () => _selectMode('admin'),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 32),
                 TextButton.icon(

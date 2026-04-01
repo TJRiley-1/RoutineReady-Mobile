@@ -29,6 +29,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
   int _currentTaskIndex = -1;
   double _elapsedInTask = 0;
   bool _showTour = false;
+  final ScrollController _scrollController = ScrollController();
 
   // GlobalKeys for tour spotlight targets
   final _keyTaskEditor = GlobalKey();
@@ -62,6 +63,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
   @override
   void dispose() {
     _timer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -75,7 +77,9 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       schoolState.timeline.tasks,
     );
 
-    if (mounted) {
+    if (mounted &&
+        (_currentTaskIndex != progress.currentTaskIndex ||
+            _elapsedInTask != progress.elapsedInTask)) {
       setState(() {
         _currentTaskIndex = progress.currentTaskIndex;
         _elapsedInTask = progress.elapsedInTask;
@@ -229,53 +233,10 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: SafeArea(
                   bottom: false,
-                  child: Row(
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      // Left buttons
-                      if (!state.isFreeMode) ...[
-                        ElevatedButton.icon(
-                          key: _keySaveButton,
-                          onPressed: state.hasUnsavedChanges && !state.isSaving
-                              ? _saveAll
-                              : null,
-                          icon: const Icon(LucideIcons.save, size: 18),
-                          label: Text(state.isSaving
-                              ? 'Saving...'
-                              : state.hasUnsavedChanges
-                                  ? 'Save Changes'
-                                  : 'Saved'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: state.hasUnsavedChanges
-                                ? AppColors.brandAccent
-                                : Colors.grey.shade200,
-                            foregroundColor: state.hasUnsavedChanges
-                                ? AppColors.brandPrimaryDark
-                                : Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          onPressed: _showSaveAsTemplate,
-                          icon: const Icon(LucideIcons.bookmarkPlus, size: 18),
-                          label: const Text('Save as Template'),
-                        ),
-                      ],
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        key: _keyDisplaySettings,
-                        onPressed: _showDisplaySettings,
-                        icon: const Icon(LucideIcons.monitor, size: 18),
-                        label: const Text('Display Settings'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        key: _keyChangeTheme,
-                        onPressed: _showThemeChooser,
-                        icon: const Icon(LucideIcons.palette, size: 18),
-                        label: const Text('Change Theme'),
-                      ),
-                      const Spacer(),
-                      // Center title
+                      // Centred title
                       Column(
                         children: [
                           const Text(
@@ -295,19 +256,61 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                           ),
                         ],
                       ),
-                      const Spacer(),
-                      // Right buttons
-                      OutlinedButton.icon(
-                        onPressed: _showUserSettings,
-                        icon: const Icon(LucideIcons.settings, size: 18),
-                        label: const Text('User Settings'),
-                      ),
-                      const SizedBox(width: 8),
-                      OutlinedButton.icon(
-                        key: _keyExitAdmin,
-                        onPressed: _exitAdmin,
-                        icon: const Icon(LucideIcons.arrowLeft, size: 18),
-                        label: const Text('Exit Admin'),
+                      // Left + right buttons
+                      Row(
+                        children: [
+                          // Left buttons
+                          if (!state.isFreeMode) ...[
+                            ElevatedButton.icon(
+                              key: _keySaveButton,
+                              onPressed: state.hasUnsavedChanges && !state.isSaving
+                                  ? _saveAll
+                                  : null,
+                              icon: const Icon(LucideIcons.save, size: 18),
+                              label: Text(state.isSaving
+                                  ? 'Saving...'
+                                  : state.hasUnsavedChanges
+                                      ? 'Save Changes'
+                                      : 'Saved'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: state.hasUnsavedChanges
+                                    ? AppColors.brandAccent
+                                    : Colors.grey.shade200,
+                                foregroundColor: state.hasUnsavedChanges
+                                    ? AppColors.brandPrimaryDark
+                                    : Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          ElevatedButton.icon(
+                            key: _keyDisplaySettings,
+                            onPressed: _showDisplaySettings,
+                            icon: const Icon(LucideIcons.monitor, size: 18),
+                            label: const Text('Display Settings'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            key: _keyChangeTheme,
+                            onPressed: _showThemeChooser,
+                            icon: const Icon(LucideIcons.palette, size: 18),
+                            label: const Text('Change Theme'),
+                          ),
+                          const Spacer(),
+                          // Right buttons
+                          OutlinedButton.icon(
+                            onPressed: _showUserSettings,
+                            icon: const Icon(LucideIcons.settings, size: 18),
+                            label: const Text('User Settings'),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            key: _keyExitAdmin,
+                            onPressed: _exitAdmin,
+                            icon: const Icon(LucideIcons.arrowLeft, size: 18),
+                            label: const Text('Exit Admin'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -384,6 +387,8 @@ class _AdminShellState extends ConsumerState<AdminShell> {
               // Main content
               Expanded(
                 child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const ClampingScrollPhysics(),
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
@@ -404,6 +409,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                         elapsedInTask: _elapsedInTask,
                         tourKeyEditor: _keyTaskEditor,
                         tourKeyAddTask: _keyAddTask,
+                        onSaveAsTemplate: state.isFreeMode ? null : _showSaveAsTemplate,
                       ),
                     ],
                   ),

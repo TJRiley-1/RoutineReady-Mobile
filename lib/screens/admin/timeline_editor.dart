@@ -11,6 +11,9 @@ import '../../providers/school_provider.dart';
 import '../../utils/theme_utils.dart';
 import '../../utils/time_utils.dart';
 import '../../widgets/display/transition_indicator.dart';
+import '../display/horizontal_display.dart';
+import '../display/multi_row_display.dart';
+import '../display/auto_pan_display.dart';
 import 'task_editor_modal.dart';
 
 class TimelineEditor extends ConsumerWidget {
@@ -21,6 +24,7 @@ class TimelineEditor extends ConsumerWidget {
   final double elapsedInTask;
   final GlobalKey? tourKeyEditor;
   final GlobalKey? tourKeyAddTask;
+  final VoidCallback? onSaveAsTemplate;
 
   const TimelineEditor({
     super.key,
@@ -31,6 +35,7 @@ class TimelineEditor extends ConsumerWidget {
     required this.elapsedInTask,
     this.tourKeyEditor,
     this.tourKeyAddTask,
+    this.onSaveAsTemplate,
   });
 
   @override
@@ -45,37 +50,56 @@ class TimelineEditor extends ConsumerWidget {
             Builder(builder: (context) {
               final isFree = ref.watch(schoolProvider).valueOrNull?.isFreeMode ?? false;
               final atLimit = isFree && timeline.tasks.length >= 5;
-              return Row(
+              return Stack(
+                alignment: Alignment.center,
                 children: [
-                  const Spacer(),
-                  const Text(
-                    'Edit Tasks',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.brandText,
-                    ),
-                  ),
-                  if (isFree) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      '${timeline.tasks.length}/5',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: atLimit ? AppColors.brandError : AppColors.brandTextMuted,
-                        fontWeight: FontWeight.w500,
+                  // Centred title
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Edit Tasks',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.brandText,
+                        ),
                       ),
-                    ),
-                  ],
-                  const Spacer(),
-                  ElevatedButton.icon(
-                    key: tourKeyAddTask,
-                    onPressed: atLimit ? null : () => _addTask(context, ref),
-                    icon: const Icon(LucideIcons.plus, size: 18),
-                    label: const Text('Add Task'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brandSuccess,
-                    ),
+                      if (isFree) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          '${timeline.tasks.length}/5',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: atLimit ? AppColors.brandError : AppColors.brandTextMuted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  // Right-aligned buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (onSaveAsTemplate != null) ...[
+                        ElevatedButton.icon(
+                          onPressed: onSaveAsTemplate,
+                          icon: const Icon(LucideIcons.bookmarkPlus, size: 18),
+                          label: const Text('Save as Template'),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      ElevatedButton.icon(
+                        key: tourKeyAddTask,
+                        onPressed: atLimit ? null : () => _addTask(context, ref),
+                        icon: const Icon(LucideIcons.plus, size: 18),
+                        label: const Text('Add Task'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.brandSuccess,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               );
@@ -85,7 +109,9 @@ class TimelineEditor extends ConsumerWidget {
             // Scrollable task list
             SizedBox(
               height: 320,
-              child: SingleChildScrollView(
+              child: Scrollbar(
+                thumbVisibility: true,
+                child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -148,6 +174,7 @@ class TimelineEditor extends ConsumerWidget {
                   ],
                 ),
               ),
+              ),
             ),
 
             const SizedBox(height: 16),
@@ -166,17 +193,27 @@ class TimelineEditor extends ConsumerWidget {
             const SizedBox(height: 8),
 
             // Live preview
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.brandBorder, width: 2),
-                borderRadius: BorderRadius.circular(12),
-                gradient: getBackgroundGradient(theme),
-              ),
-              child: const Center(
-                child: Text(
-                  'Live preview renders here',
-                  style: TextStyle(color: AppColors.brandTextMuted),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.brandBorder, width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  child: SizedBox(
+                    width: displaySettings.width.toDouble(),
+                    height: displaySettings.height.toDouble(),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: getBackgroundGradient(theme),
+                      ),
+                      child: _buildDisplayMode(),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -184,6 +221,36 @@ class TimelineEditor extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildDisplayMode() {
+    switch (displaySettings.mode) {
+      case 'horizontal':
+        return HorizontalDisplay(
+          timeline: timeline,
+          displaySettings: displaySettings,
+          theme: theme,
+          currentTaskIndex: currentTaskIndex,
+          elapsedInTask: elapsedInTask,
+        );
+      case 'multi-row':
+        return MultiRowDisplay(
+          timeline: timeline,
+          displaySettings: displaySettings,
+          theme: theme,
+          currentTaskIndex: currentTaskIndex,
+          elapsedInTask: elapsedInTask,
+        );
+      case 'auto-pan':
+      default:
+        return AutoPanDisplay(
+          timeline: timeline,
+          displaySettings: displaySettings,
+          theme: theme,
+          currentTaskIndex: currentTaskIndex,
+          elapsedInTask: elapsedInTask,
+        );
+    }
   }
 
   void _addTask(BuildContext context, WidgetRef ref) {

@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme_constants.dart';
@@ -243,52 +244,129 @@ class _DisplaySettingsModalState extends ConsumerState<DisplaySettingsModal> {
                       const Text('Resolution',
                           style: TextStyle(fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _resolutionButton(2560, 1080, 'Ultra-wide'),
-                          _resolutionButton(1920, 1080, 'Full HD'),
-                          _resolutionButton(1280, 720, 'HD'),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                  labelText: 'Width'),
-                              keyboardType: TextInputType.number,
-                              controller: TextEditingController(
-                                  text: '${_settings.width}'),
-                              onSubmitted: (v) {
-                                final w = int.tryParse(v);
-                                if (w != null && w > 0) {
-                                  _update(_settings.copyWith(width: w));
-                                }
-                              },
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.brandBorder),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _resolutionButton(2560, 1080, 'Ultra-wide'),
+                                _resolutionButton(1920, 1080, 'Full HD'),
+                                _resolutionButton(1280, 720, 'HD'),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text('x'),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                  labelText: 'Height'),
-                              keyboardType: TextInputType.number,
-                              controller: TextEditingController(
-                                  text: '${_settings.height}'),
-                              onSubmitted: (v) {
-                                final h = int.tryParse(v);
-                                if (h != null && h > 0) {
-                                  _update(_settings.copyWith(height: h));
-                                }
-                              },
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                children: [
+                                  Expanded(child: Divider()),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 8),
+                                    child: Text('or custom',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.brandTextMuted)),
+                                  ),
+                                  Expanded(child: Divider()),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Width',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500)),
+                                      const SizedBox(height: 4),
+                                      TextField(
+                                        decoration: const InputDecoration(
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 10),
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        controller: TextEditingController(
+                                            text: '${_settings.width}'),
+                                        onSubmitted: (v) {
+                                          final w = int.tryParse(v);
+                                          if (w != null && w > 0) {
+                                            _update(_settings.copyWith(width: w));
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                  child: Padding(
+                                    padding: EdgeInsets.only(top: 20),
+                                    child: Text('x'),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Height',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500)),
+                                      const SizedBox(height: 4),
+                                      TextField(
+                                        decoration: const InputDecoration(
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 10),
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        controller: TextEditingController(
+                                            text: '${_settings.height}'),
+                                        onSubmitted: (v) {
+                                          final h = int.tryParse(v);
+                                          if (h != null && h > 0) {
+                                            _update(_settings.copyWith(height: h));
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  final view = ui.PlatformDispatcher.instance.implicitView;
+                                  if (view != null) {
+                                    final pixelWidth = view.physicalSize.width.round();
+                                    final pixelHeight = view.physicalSize.height.round();
+                                    _update(_settings.copyWith(
+                                      width: pixelWidth,
+                                      height: pixelHeight,
+                                    ));
+                                  }
+                                },
+                                icon: const Icon(Icons.screen_search_desktop_outlined, size: 18),
+                                label: const Text('Detect screen size'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -348,6 +426,65 @@ class _DisplaySettingsModalState extends ConsumerState<DisplaySettingsModal> {
                         onChanged: (v) => _update(_settings.copyWith(
                             bottomBannerHeight: v.round())),
                       ),
+                      const Divider(),
+                      const SizedBox(height: 8),
+
+                      // Auto-optimise toggle
+                      SwitchListTile(
+                        title: const Text('Auto-optimise layout'),
+                        subtitle: const Text(
+                          'Recommend the best display mode and rows for your tasks',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        value: _settings.autoOptimise,
+                        onChanged: (v) =>
+                            _update(_settings.copyWith(autoOptimise: v)),
+                      ),
+
+                      // Recommendation banner
+                      if (_settings.autoOptimise)
+                        Builder(builder: (context) {
+                          final taskCount = ref.watch(schoolProvider).valueOrNull?.timeline.tasks.length ?? 0;
+                          final rec = _getLayoutRecommendation(
+                            taskCount,
+                            _settings.width,
+                            _settings.height,
+                            _settings.mode,
+                          );
+                          if (rec == null) return const SizedBox.shrink();
+                          return Container(
+                            margin: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.brandPrimaryBg,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.brandPrimary.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.lightbulb_outline,
+                                    color: AppColors.brandPrimary, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    rec.message,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () => _update(rec.applyTo(_settings)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.brandPrimary,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  ),
+                                  child: const Text('Apply'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
                     ],
                   ),
                 ),
@@ -375,5 +512,68 @@ class _DisplaySettingsModalState extends ConsumerState<DisplaySettingsModal> {
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 11)),
     );
+  }
+
+  _LayoutRecommendation? _getLayoutRecommendation(
+    int taskCount,
+    int displayWidth,
+    int displayHeight,
+    String currentMode,
+  ) {
+    if (taskCount == 0) return null;
+
+    const estimatedCardWidth = 200;
+    const estimatedTransitionWidth = 120;
+    final slotWidth = estimatedCardWidth + estimatedTransitionWidth;
+    final maxCardsPerRow = (displayWidth / slotWidth).floor().clamp(1, 100);
+
+    if (currentMode == 'horizontal' && taskCount > maxCardsPerRow) {
+      final optimalRows = (taskCount / maxCardsPerRow).ceil().clamp(1, 6);
+      return _LayoutRecommendation(
+        message:
+            'For $taskCount tasks on ${displayWidth}x$displayHeight, we recommend: Multi-Row, $optimalRows rows',
+        mode: 'multi-row',
+        rows: optimalRows,
+      );
+    }
+
+    if (currentMode == 'multi-row') {
+      final optimalRows = (taskCount / maxCardsPerRow).ceil().clamp(1, 6);
+      final maxRowsFit = (displayHeight / 250).floor().clamp(1, 6);
+      if (optimalRows > maxRowsFit) {
+        return _LayoutRecommendation(
+          message:
+              'Too many tasks for multi-row at this resolution. We recommend: Auto-Pan mode',
+          mode: 'auto-pan',
+          rows: 1,
+        );
+      }
+      if (_settings.rows != optimalRows) {
+        return _LayoutRecommendation(
+          message:
+              'For $taskCount tasks on ${displayWidth}x$displayHeight, we recommend: $optimalRows rows',
+          mode: 'multi-row',
+          rows: optimalRows,
+        );
+      }
+    }
+
+    return null;
+  }
+}
+
+class _LayoutRecommendation {
+  final String message;
+  final String mode;
+  final int rows;
+
+  const _LayoutRecommendation({
+    required this.message,
+    required this.mode,
+    required this.rows,
+  });
+
+  DisplaySettings applyTo(DisplaySettings settings) {
+    return settings.copyWith(mode: mode, rows: rows);
   }
 }

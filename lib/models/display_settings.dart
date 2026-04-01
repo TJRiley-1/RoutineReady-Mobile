@@ -16,6 +16,7 @@ class DisplaySettings {
   final String selectedSprite;
   final String selectedSurface;
   final int roadHeight;
+  final bool autoOptimise;
 
   const DisplaySettings({
     this.width = 2560,
@@ -35,6 +36,7 @@ class DisplaySettings {
     this.selectedSprite = 'penguin',
     this.selectedSurface = 'ice',
     this.roadHeight = 32,
+    this.autoOptimise = false,
   });
 
   factory DisplaySettings.fromDbJson(Map<String, dynamic> json) {
@@ -56,6 +58,7 @@ class DisplaySettings {
       selectedSprite: json['selected_sprite'] as String? ?? 'penguin',
       selectedSurface: json['selected_surface'] as String? ?? 'ice',
       roadHeight: json['road_height'] as int? ?? 32,
+      autoOptimise: json['auto_optimise'] as bool? ?? false,
     );
   }
 
@@ -77,6 +80,7 @@ class DisplaySettings {
         'selected_sprite': selectedSprite,
         'selected_surface': selectedSurface,
         'road_height': roadHeight,
+        'auto_optimise': autoOptimise,
       };
 
   DisplaySettings copyWith({
@@ -97,6 +101,7 @@ class DisplaySettings {
     String? selectedSprite,
     String? selectedSurface,
     int? roadHeight,
+    bool? autoOptimise,
   }) {
     return DisplaySettings(
       width: width ?? this.width,
@@ -116,6 +121,7 @@ class DisplaySettings {
       selectedSprite: selectedSprite ?? this.selectedSprite,
       selectedSurface: selectedSurface ?? this.selectedSurface,
       roadHeight: roadHeight ?? this.roadHeight,
+      autoOptimise: autoOptimise ?? this.autoOptimise,
     );
   }
 }
