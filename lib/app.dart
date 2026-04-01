@@ -103,7 +103,7 @@ class _AuthenticatedRouter extends ConsumerWidget {
   }
 }
 
-/// Gate screen for @routineready.app accounts with no org membership.
+/// Gate screen for staff accounts with no org membership.
 class _StaffAdminGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {

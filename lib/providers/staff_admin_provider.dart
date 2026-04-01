@@ -5,7 +5,9 @@ import 'auth_provider.dart';
 
 final isStaffAdminProvider = Provider<bool>((ref) {
   final user = ref.watch(currentUserProvider);
-  return user?.email?.endsWith('@routineready.app') ?? false;
+  final email = user?.email;
+  if (email == null) return false;
+  return email.endsWith('@routineready.app') || email.endsWith('@routineready.co.uk');
 });
 
 final staffAdminModeProvider = StateProvider<bool>((ref) => false);

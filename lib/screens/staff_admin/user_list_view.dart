@@ -83,14 +83,14 @@ class UserListView extends ConsumerWidget {
                   return Card(
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: email.endsWith('@routineready.app')
+                        backgroundColor: email.endsWith('@routineready.app') || email.endsWith('@routineready.co.uk')
                             ? Colors.amber.shade100
                             : AppColors.brandPrimaryBg,
                         child: Icon(
-                          email.endsWith('@routineready.app')
+                          email.endsWith('@routineready.app') || email.endsWith('@routineready.co.uk')
                               ? Icons.admin_panel_settings
                               : Icons.person,
-                          color: email.endsWith('@routineready.app')
+                          color: email.endsWith('@routineready.app') || email.endsWith('@routineready.co.uk')
                               ? Colors.amber.shade800
                               : AppColors.brandPrimary,
                         ),
