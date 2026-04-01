@@ -12,6 +12,7 @@ import '../data/defaults.dart';
 import '../data/preset_themes.dart';
 import '../utils/time_utils.dart';
 import 'auth_provider.dart';
+import 'membership_provider.dart';
 
 final schoolProvider =
     AsyncNotifierProvider<SchoolNotifier, SchoolState?>(() => SchoolNotifier());
@@ -28,6 +29,7 @@ class SchoolState {
   final bool hasUnsavedChanges;
   final bool isSaving;
   final bool isFreeMode;
+  final bool isSessionOnlyMode;
 
   SchoolState({
     required this.school,
@@ -41,6 +43,7 @@ class SchoolState {
     this.hasUnsavedChanges = false,
     this.isSaving = false,
     this.isFreeMode = false,
+    this.isSessionOnlyMode = false,
   });
 
   SchoolState copyWith({
@@ -55,6 +58,7 @@ class SchoolState {
     bool? hasUnsavedChanges,
     bool? isSaving,
     bool? isFreeMode,
+    bool? isSessionOnlyMode,
   }) {
     return SchoolState(
       school: school ?? this.school,
@@ -68,6 +72,7 @@ class SchoolState {
       hasUnsavedChanges: hasUnsavedChanges ?? this.hasUnsavedChanges,
       isSaving: isSaving ?? this.isSaving,
       isFreeMode: isFreeMode ?? this.isFreeMode,
+      isSessionOnlyMode: isSessionOnlyMode ?? this.isSessionOnlyMode,
     );
   }
 }
@@ -85,6 +90,14 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
   Future<SchoolState?> build() async {
     final user = ref.watch(currentUserProvider);
     if (user == null) return null;
+
+    // If a classroom is selected (org-based flow), load by classroom ID
+    final selectedClassroom = ref.watch(selectedClassroomProvider);
+    if (selectedClassroom != null) {
+      return _loadByClassroomId(selectedClassroom.id);
+    }
+
+    // Legacy flow: load by owner_id (for users without org membership)
     return _loadAllData(user.id);
   }
 
@@ -92,9 +105,23 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
   Future<void> reload() async {
     final current = state.valueOrNull;
     if (current != null && current.isFreeMode) return; // Free mode: no DB to reload from
+
+    final selectedClassroom = ref.read(selectedClassroomProvider);
+    if (selectedClassroom != null) {
+      state = AsyncData(await _loadByClassroomId(selectedClassroom.id));
+      return;
+    }
+
     final user = ref.read(currentUserProvider);
     if (user == null) return;
     state = AsyncData(await _loadAllData(user.id));
+  }
+
+  /// Enable session-only mode (staff/non-owner edits don't persist).
+  void enableSessionOnlyMode() {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(isSessionOnlyMode: true));
   }
 
   /// Initialize in-memory-only state for free tier users (no DB reads/writes).
@@ -114,6 +141,21 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     ));
   }
 
+  /// Load all data for a specific classroom (org-based flow).
+  Future<SchoolState?> _loadByClassroomId(String classroomId) async {
+    final schoolRes = await _client
+        .from('schools')
+        .select()
+        .eq('id', classroomId)
+        .limit(1)
+        .maybeSingle();
+
+    if (schoolRes == null) return null;
+
+    final school = School.fromJson(schoolRes);
+    return _loadSchoolData(school);
+  }
+
   Future<SchoolState?> _loadAllData(String userId) async {
     // 1. Load school
     final schoolRes = await _client
@@ -126,7 +168,10 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     if (schoolRes == null) return null;
 
     final school = School.fromJson(schoolRes);
+    return _loadSchoolData(school);
+  }
 
+  Future<SchoolState?> _loadSchoolData(School school) async {
     // 2. Load display settings
     final dsRes = await _client
         .from('display_settings')
@@ -578,7 +623,9 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
   // --- Private DB helpers ---
 
   /// Returns true if DB writes should be skipped (free tier).
-  bool get _skipDbWrites => state.valueOrNull?.isFreeMode ?? false;
+  bool get _skipDbWrites =>
+      (state.valueOrNull?.isFreeMode ?? false) ||
+      (state.valueOrNull?.isSessionOnlyMode ?? false);
 
   Future<void> _saveDisplaySettingsToDb(
       DisplaySettings settings, String theme) async {

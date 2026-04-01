@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../config/revenuecat_config.dart';
 import 'auth_provider.dart';
+import 'membership_provider.dart';
 
 /// Whether RevenueCat has been initialized.
 bool _revenueCatInitialized = false;
@@ -80,6 +81,22 @@ final subscriptionPlanProvider = FutureProvider<String>((ref) async {
     return userSub['plan'] as String? ?? 'free';
   }
 
+  // Then check org-level subscription
+  final membership = await ref.watch(membershipProvider.future);
+  if (membership != null) {
+    final orgSub = await client
+        .from('subscriptions')
+        .select('plan, status')
+        .eq('org_id', membership.orgId)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+    if (orgSub != null) {
+      return orgSub['plan'] as String? ?? 'free';
+    }
+  }
+
   // Then check school-level subscription (manual setup)
   final school = await client
       .from('schools')
@@ -130,6 +147,32 @@ final subscriptionProvider = FutureProvider<SubscriptionState>((ref) async {
           ? DateTime.tryParse(userSub['expires_at'] as String)
           : null,
     );
+  }
+
+  // Then check org-level subscription
+  final membership = await ref.watch(membershipProvider.future);
+  if (membership != null) {
+    final orgSub = await client
+        .from('subscriptions')
+        .select()
+        .eq('org_id', membership.orgId)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+    if (orgSub != null) {
+      return SubscriptionState(
+        plan: orgSub['plan'] as String? ?? 'free',
+        maxDisplaySlots: orgSub['max_display_slots'] as int? ?? 1,
+        maxAdminSlots: orgSub['max_admin_slots'] as int? ?? 1,
+        status: orgSub['status'] as String? ?? 'active',
+        source: orgSub['source'] as String? ?? 'manual',
+        periodType: orgSub['period_type'] as String?,
+        expiresAt: orgSub['expires_at'] != null
+            ? DateTime.tryParse(orgSub['expires_at'] as String)
+            : null,
+      );
+    }
   }
 
   // Then check school-level subscription

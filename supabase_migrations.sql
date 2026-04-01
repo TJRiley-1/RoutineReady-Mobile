@@ -236,3 +236,94 @@ DROP TRIGGER IF EXISTS set_subscriptions_updated_at ON subscriptions;
 CREATE TRIGGER set_subscriptions_updated_at
   BEFORE UPDATE ON subscriptions
   FOR EACH ROW EXECUTE FUNCTION update_subscriptions_updated_at();
+
+-- ═══════════════════════════════════════════════════════════════
+-- 10. Multi-Account School Organization Model
+-- ═══════════════════════════════════════════════════════════════
+
+-- Organizations table
+CREATE TABLE IF NOT EXISTS organizations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+
+-- Org members table (links users to organizations with roles)
+CREATE TABLE IF NOT EXISTS org_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES organizations ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users ON DELETE CASCADE,
+  role text NOT NULL CHECK (role IN ('teacher', 'staff', 'display', 'school_admin')),
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(org_id, user_id)
+);
+ALTER TABLE org_members ENABLE ROW LEVEL SECURITY;
+CREATE INDEX IF NOT EXISTS idx_org_members_user_id ON org_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_org_members_org_id ON org_members(org_id);
+
+-- Add org_id to schools and subscriptions
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS org_id uuid REFERENCES organizations ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_schools_org_id ON schools(org_id);
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS org_id uuid REFERENCES organizations ON DELETE CASCADE;
+
+-- RLS helper functions for org-based access
+CREATE OR REPLACE FUNCTION user_in_school_org(p_school_id uuid)
+RETURNS boolean AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM org_members om
+    JOIN schools s ON s.org_id = om.org_id
+    WHERE s.id = p_school_id AND om.user_id = auth.uid()
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+CREATE OR REPLACE FUNCTION user_is_org_member(p_org_id uuid)
+RETURNS boolean AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM org_members WHERE org_id = p_org_id AND user_id = auth.uid()
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+CREATE OR REPLACE FUNCTION user_role_in_school_org(p_school_id uuid)
+RETURNS text AS $$
+  SELECT om.role FROM org_members om
+  JOIN schools s ON s.org_id = om.org_id
+  WHERE s.id = p_school_id AND om.user_id = auth.uid()
+  LIMIT 1;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- RLS: organizations + org_members
+CREATE POLICY "Org members can view organization"
+  ON organizations FOR SELECT
+  USING (user_is_org_member(id));
+
+CREATE POLICY "Org members can view memberships"
+  ON org_members FOR SELECT
+  USING (user_is_org_member(org_id));
+
+-- Updated RLS: schools SELECT includes org members
+DROP POLICY IF EXISTS "Users select own school" ON schools;
+CREATE POLICY "Users select own school"
+  ON schools FOR SELECT
+  USING (owner_id = auth.uid() OR user_in_school_org(id));
+
+-- Updated RLS: all child tables split into SELECT (org-wide) + write (owner-only)
+-- See apply_migration for full policy definitions (active_timeline, display_settings,
+-- templates, tasks, weekly_schedules, custom_themes, display_sessions, subscriptions)
+
+-- Data migration: create orgs for existing schools
+DO $$
+DECLARE
+  school_rec RECORD;
+  new_org_id uuid;
+BEGIN
+  FOR school_rec IN SELECT id, owner_id, school_name FROM schools WHERE org_id IS NULL
+  LOOP
+    INSERT INTO organizations (name) VALUES (school_rec.school_name)
+    RETURNING id INTO new_org_id;
+    UPDATE schools SET org_id = new_org_id WHERE id = school_rec.id;
+    INSERT INTO org_members (org_id, user_id, role)
+    VALUES (new_org_id, school_rec.owner_id, 'teacher')
+    ON CONFLICT (org_id, user_id) DO NOTHING;
+  END LOOP;
+END $$;

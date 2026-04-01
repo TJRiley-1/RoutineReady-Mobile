@@ -92,6 +92,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     ref.read(sessionModeProvider.notifier).state = null;
   }
 
+
   Future<void> _saveAll() async {
     try {
       await ref.read(schoolProvider.notifier).saveAll();
@@ -260,7 +261,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                       Row(
                         children: [
                           // Left buttons
-                          if (!state.isFreeMode) ...[
+                          if (!state.isFreeMode && !state.isSessionOnlyMode) ...[
                             ElevatedButton.icon(
                               key: _keySaveButton,
                               onPressed: state.hasUnsavedChanges && !state.isSaving
@@ -354,8 +355,33 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                   ),
                 ),
 
+              // Session-only mode banner (staff)
+              if (state.isSessionOnlyMode)
+                Container(
+                  color: Colors.blue.shade50,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline,
+                          color: Colors.blue.shade700, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Session-only mode — changes are temporary and will not be saved.',
+                          style: TextStyle(
+                            color: Colors.blue.shade700,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               // Unsaved changes banner
-              if (state.hasUnsavedChanges && !state.isFreeMode)
+              if (state.hasUnsavedChanges && !state.isFreeMode && !state.isSessionOnlyMode)
                 Container(
                   color: Colors.amber.shade50,
                   padding: const EdgeInsets.symmetric(
@@ -392,8 +418,8 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // Weekly Schedule (paid only)
-                      if (!state.isFreeMode) ...[
+                      // Weekly Schedule (paid + teacher only)
+                      if (!state.isFreeMode && !state.isSessionOnlyMode) ...[
                         TemplateManager(
                           templates: state.templates,
                           weeklySchedule: state.weeklySchedule,
@@ -409,7 +435,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                         elapsedInTask: _elapsedInTask,
                         tourKeyEditor: _keyTaskEditor,
                         tourKeyAddTask: _keyAddTask,
-                        onSaveAsTemplate: state.isFreeMode ? null : _showSaveAsTemplate,
+                        onSaveAsTemplate: (state.isFreeMode || state.isSessionOnlyMode) ? null : _showSaveAsTemplate,
                       ),
                     ],
                   ),
@@ -421,7 +447,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
               // Onboarding tour overlay
               if (_showTour)
                 OnboardingTourOverlay(
-                  steps: _buildTourSteps(state.isFreeMode),
+                  steps: _buildTourSteps(state.isFreeMode, state.isSessionOnlyMode),
                   onComplete: () => setState(() => _showTour = false),
                 ),
             ],
@@ -431,7 +457,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     );
   }
 
-  List<TourStep> _buildTourSteps(bool isFreeMode) {
+  List<TourStep> _buildTourSteps(bool isFreeMode, [bool isSessionOnly = false]) {
     return [
       TourStep(
         targetKey: _keyTaskEditor,

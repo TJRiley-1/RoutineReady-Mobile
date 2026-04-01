@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'config/theme_constants.dart';
+import 'models/org_member.dart';
 import 'providers/auth_provider.dart';
+import 'providers/membership_provider.dart';
 import 'providers/school_provider.dart';
 import 'providers/session_provider.dart';
 import 'providers/subscription_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/setup_wizard_screen.dart';
+import 'screens/classroom_picker/classroom_picker_screen.dart';
 import 'screens/mode_select/mode_select_screen.dart';
 import 'screens/display/display_screen.dart';
 import 'screens/admin/admin_shell.dart';
@@ -52,6 +55,47 @@ class _AuthenticatedRouter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final membershipAsync = ref.watch(membershipProvider);
+
+    return membershipAsync.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Error loading membership: $e'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(membershipProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (membership) {
+        // No org membership — fall back to legacy flow (direct owner) or show message
+        if (membership == null) {
+          return const _LegacyRouter();
+        }
+
+        // Has membership — role-based routing
+        return _RoleBasedRouter(membership: membership);
+      },
+    );
+  }
+}
+
+/// Legacy router for users without org membership (backward compat).
+/// Handles existing teacher accounts that own schools directly.
+class _LegacyRouter extends ConsumerWidget {
+  const _LegacyRouter();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final schoolState = ref.watch(schoolProvider);
     final sessionMode = ref.watch(sessionModeProvider);
     final isPaid = ref.watch(isPaidProvider);
@@ -76,9 +120,6 @@ class _AuthenticatedRouter extends ConsumerWidget {
         ),
       ),
       data: (state) {
-        // No school record:
-        // - Paid users → setup wizard
-        // - Free users → mode select with in-memory defaults (school provider handles this)
         if (state == null) {
           if (isPaid) {
             return const SetupWizardScreen();
@@ -92,17 +133,151 @@ class _AuthenticatedRouter extends ConsumerWidget {
           );
         }
 
-        // No mode selected = mode select screen
         if (sessionMode == null) {
           return const ModeSelectScreen();
         }
 
-        // Display or Admin mode
         if (sessionMode == 'display') {
           return const DisplayScreen();
         }
 
         return const AdminShell();
+      },
+    );
+  }
+}
+
+/// Role-based router for users with org membership.
+class _RoleBasedRouter extends ConsumerWidget {
+  final OrgMember membership;
+
+  const _RoleBasedRouter({required this.membership});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedClassroom = ref.watch(selectedClassroomProvider);
+    final sessionMode = ref.watch(sessionModeProvider);
+
+    // Display role: check for remembered classroom first
+    if (membership.role == UserRole.display && selectedClassroom == null) {
+      return _DisplayAutoRestore(membership: membership);
+    }
+
+    // No classroom selected → classroom picker
+    if (selectedClassroom == null) {
+      return const ClassroomPickerScreen();
+    }
+
+    // Classroom selected — load school data
+    final schoolState = ref.watch(schoolProvider);
+
+    return schoolState.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Error loading classroom: $e'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(schoolProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (state) {
+        if (state == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Enable session-only mode for staff (edits don't persist)
+        if (membership.isSessionOnly && !state.isSessionOnlyMode) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(schoolProvider.notifier).enableSessionOnlyMode();
+          });
+        }
+
+        // Route by role
+        switch (membership.role) {
+          case UserRole.display:
+            return const DisplayScreen();
+
+          case UserRole.staff:
+            // Staff goes straight to display (can edit session-only)
+            return const DisplayScreen();
+
+          case UserRole.schoolAdmin:
+            // School admin goes straight to display (read-only viewing)
+            return const DisplayScreen();
+
+          case UserRole.teacher:
+            // Teacher gets mode select (display vs admin)
+            if (sessionMode == null) {
+              return const ModeSelectScreen();
+            }
+            if (sessionMode == 'display') {
+              return const DisplayScreen();
+            }
+            return const AdminShell();
+        }
+      },
+    );
+  }
+}
+
+/// Auto-restore remembered classroom for Display role devices.
+class _DisplayAutoRestore extends ConsumerWidget {
+  final OrgMember membership;
+
+  const _DisplayAutoRestore({required this.membership});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rememberedIdAsync = ref.watch(rememberedClassroomIdProvider);
+
+    return rememberedIdAsync.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, _) => const ClassroomPickerScreen(),
+      data: (rememberedId) {
+        if (rememberedId == null) {
+          return const ClassroomPickerScreen();
+        }
+
+        // Try to find the remembered classroom in the org's classrooms
+        final classroomsAsync = ref.watch(classroomsProvider);
+        return classroomsAsync.when(
+          loading: () => const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          ),
+          error: (_, _) => const ClassroomPickerScreen(),
+          data: (classrooms) {
+            final remembered = classrooms
+                .where((c) => c.id == rememberedId)
+                .firstOrNull;
+
+            if (remembered == null) {
+              // Remembered classroom no longer exists — pick again
+              return const ClassroomPickerScreen();
+            }
+
+            // Auto-select the remembered classroom
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ref.read(selectedClassroomProvider.notifier).state = remembered;
+            });
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          },
+        );
       },
     );
   }

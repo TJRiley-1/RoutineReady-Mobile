@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../config/theme_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/membership_provider.dart';
 import '../../providers/school_provider.dart';
 import '../../providers/session_provider.dart';
 
@@ -140,12 +141,28 @@ class _ModeSelectScreenState extends ConsumerState<ModeSelectScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                TextButton.icon(
-                  onPressed: () {
-                    ref.read(authActionsProvider).signOut();
-                  },
-                  icon: const Icon(LucideIcons.logOut, size: 16),
-                  label: const Text('Sign Out'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Show "Change Classroom" if user has org membership
+                    if (ref.watch(membershipProvider).valueOrNull != null) ...[
+                      TextButton.icon(
+                        onPressed: () {
+                          ref.read(selectedClassroomProvider.notifier).state = null;
+                        },
+                        icon: const Icon(LucideIcons.arrowLeft, size: 16),
+                        label: const Text('Change Classroom'),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    TextButton.icon(
+                      onPressed: () {
+                        ref.read(authActionsProvider).signOut();
+                      },
+                      icon: const Icon(LucideIcons.logOut, size: 16),
+                      label: const Text('Sign Out'),
+                    ),
+                  ],
                 ),
               ],
             ),
