@@ -6,6 +6,7 @@ import 'providers/auth_provider.dart';
 import 'providers/membership_provider.dart';
 import 'providers/school_provider.dart';
 import 'providers/session_provider.dart';
+import 'providers/staff_admin_provider.dart';
 import 'providers/subscription_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/setup_wizard_screen.dart';
@@ -13,6 +14,7 @@ import 'screens/classroom_picker/classroom_picker_screen.dart';
 import 'screens/mode_select/mode_select_screen.dart';
 import 'screens/display/display_screen.dart';
 import 'screens/admin/admin_shell.dart';
+import 'screens/staff_admin/staff_admin_shell.dart';
 
 class RoutineReadyApp extends ConsumerWidget {
   const RoutineReadyApp({super.key});
@@ -55,6 +57,14 @@ class _AuthenticatedRouter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isStaffAdmin = ref.watch(isStaffAdminProvider);
+    final staffAdminMode = ref.watch(staffAdminModeProvider);
+
+    // Staff admin mode — bypass membership check entirely
+    if (isStaffAdmin && staffAdminMode) {
+      return const StaffAdminShell();
+    }
+
     final membershipAsync = ref.watch(membershipProvider);
 
     return membershipAsync.when(
@@ -77,14 +87,60 @@ class _AuthenticatedRouter extends ConsumerWidget {
         ),
       ),
       data: (membership) {
-        // No org membership — fall back to legacy flow (direct owner) or show message
+        // No org membership
         if (membership == null) {
+          // Staff admin accounts can open admin panel instead of dead-ending
+          if (isStaffAdmin) {
+            return _StaffAdminGate();
+          }
           return const _LegacyRouter();
         }
 
         // Has membership — role-based routing
         return _RoleBasedRouter(membership: membership);
       },
+    );
+  }
+}
+
+/// Gate screen for @routineready.app accounts with no org membership.
+class _StaffAdminGate extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.admin_panel_settings, size: 64, color: AppColors.brandPrimary),
+            const SizedBox(height: 16),
+            const Text(
+              'Routine Ready Staff',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text('You are signed in with a staff account.'),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                ref.read(staffAdminModeProvider.notifier).state = true;
+              },
+              icon: const Icon(Icons.admin_panel_settings),
+              label: const Text('Open Staff Admin'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brandPrimary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => ref.read(authActionsProvider).signOut(),
+              child: const Text('Sign Out'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
