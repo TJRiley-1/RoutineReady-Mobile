@@ -16,7 +16,7 @@ import '../display/multi_row_display.dart';
 import '../display/auto_pan_display.dart';
 import 'task_editor_modal.dart';
 
-class TimelineEditor extends ConsumerWidget {
+class TimelineEditor extends ConsumerStatefulWidget {
   final ActiveTimeline timeline;
   final DisplaySettings displaySettings;
   final ThemeConfig theme;
@@ -39,9 +39,28 @@ class TimelineEditor extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TimelineEditor> createState() => _TimelineEditorState();
+}
+
+class _TimelineEditorState extends ConsumerState<TimelineEditor> {
+  final ScrollController _taskScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _taskScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final timeline = widget.timeline;
+    final displaySettings = widget.displaySettings;
+    final theme = widget.theme;
+    final currentTaskIndex = widget.currentTaskIndex;
+    final elapsedInTask = widget.elapsedInTask;
+
     return Card(
-      key: tourKeyEditor,
+      key: widget.tourKeyEditor,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -82,17 +101,17 @@ class TimelineEditor extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      if (onSaveAsTemplate != null) ...[
+                      if (widget.onSaveAsTemplate != null) ...[
                         ElevatedButton.icon(
-                          onPressed: onSaveAsTemplate,
+                          onPressed: widget.onSaveAsTemplate,
                           icon: const Icon(LucideIcons.bookmarkPlus, size: 18),
                           label: const Text('Save as Template'),
                         ),
                         const SizedBox(width: 8),
                       ],
                       ElevatedButton.icon(
-                        key: tourKeyAddTask,
-                        onPressed: atLimit ? null : () => _addTask(context, ref),
+                        key: widget.tourKeyAddTask,
+                        onPressed: atLimit ? null : () => _addTask(context),
                         icon: const Icon(LucideIcons.plus, size: 18),
                         label: const Text('Add Task'),
                         style: ElevatedButton.styleFrom(
@@ -110,70 +129,72 @@ class TimelineEditor extends ConsumerWidget {
             SizedBox(
               height: 320,
               child: Scrollbar(
+                controller: _taskScrollController,
                 thumbVisibility: true,
                 child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Start time
-                    _StartTimeCard(
-                      startTime: timeline.startTime,
-                      onChanged: (time) => _updateStartTime(ref, time),
-                    ),
-                    const SizedBox(width: 16),
-                    // Tasks
-                    ...List.generate(timeline.tasks.length, (index) {
-                      final task = timeline.tasks[index];
-                      return Row(
-                        children: [
-                          _TaskEditCard(
-                            task: task,
-                            displaySettings: displaySettings,
-                            onEdit: () => _editTask(context, ref, task),
-                            onDelete: () => _deleteTask(ref, task.id),
-                            onTimeAdjust: (delta) =>
-                                _adjustTime(ref, task.id, delta),
-                          ),
-                          const SizedBox(width: 8),
-                          if (displaySettings.mode != 'auto-pan')
-                            SizedBox(
-                              width: 120,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text(
-                                    'Transition',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: AppColors.brandTextMuted,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  TransitionIndicator(
-                                    displaySettings: displaySettings,
-                                    theme: theme,
-                                    taskDuration: task.duration,
-                                    elapsed: elapsedInTask,
-                                    isPast: index < currentTaskIndex,
-                                    isActive: index == currentTaskIndex,
-                                    width: 100,
-                                  ),
-                                ],
-                              ),
+                  controller: _taskScrollController,
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Start time
+                      _StartTimeCard(
+                        startTime: timeline.startTime,
+                        onChanged: (time) => _updateStartTime(time),
+                      ),
+                      const SizedBox(width: 16),
+                      // Tasks
+                      ...List.generate(timeline.tasks.length, (index) {
+                        final task = timeline.tasks[index];
+                        return Row(
+                          children: [
+                            _TaskEditCard(
+                              task: task,
+                              displaySettings: displaySettings,
+                              onEdit: () => _editTask(context, task),
+                              onDelete: () => _deleteTask(task.id),
+                              onTimeAdjust: (delta) =>
+                                  _adjustTime(task.id, delta),
                             ),
-                          const SizedBox(width: 8),
-                        ],
-                      );
-                    }),
-                    // End time
-                    _EndTimeCard(
-                      endTime:
-                          calculateEndTime(timeline.startTime, timeline.tasks),
-                    ),
-                  ],
+                            const SizedBox(width: 8),
+                            if (displaySettings.mode != 'auto-pan')
+                              SizedBox(
+                                width: 120,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'Transition',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.brandTextMuted,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    TransitionIndicator(
+                                      displaySettings: displaySettings,
+                                      theme: theme,
+                                      taskDuration: task.duration,
+                                      elapsed: elapsedInTask,
+                                      isPast: index < currentTaskIndex,
+                                      isActive: index == currentTaskIndex,
+                                      width: 100,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(width: 8),
+                          ],
+                        );
+                      }),
+                      // End time
+                      _EndTimeCard(
+                        endTime:
+                            calculateEndTime(timeline.startTime, timeline.tasks),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               ),
             ),
 
@@ -192,30 +213,38 @@ class TimelineEditor extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
 
-            // Live preview
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.brandBorder, width: 2),
+            // Live preview — use LayoutBuilder to fill available width
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final aspectRatio = displaySettings.width / displaySettings.height;
+                final previewWidth = constraints.maxWidth;
+                final previewHeight = previewWidth / aspectRatio;
+                return ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                ),
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: displaySettings.width.toDouble(),
-                    height: displaySettings.height.toDouble(),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: getBackgroundGradient(theme),
+                  child: Container(
+                    width: previewWidth,
+                    height: previewHeight,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.brandBorder, width: 2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
+                      child: SizedBox(
+                        width: displaySettings.width.toDouble(),
+                        height: displaySettings.height.toDouble(),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: getBackgroundGradient(theme),
+                          ),
+                          child: _buildDisplayMode(),
+                        ),
                       ),
-                      child: _buildDisplayMode(),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -224,6 +253,12 @@ class TimelineEditor extends ConsumerWidget {
   }
 
   Widget _buildDisplayMode() {
+    final displaySettings = widget.displaySettings;
+    final timeline = widget.timeline;
+    final theme = widget.theme;
+    final currentTaskIndex = widget.currentTaskIndex;
+    final elapsedInTask = widget.elapsedInTask;
+
     switch (displaySettings.mode) {
       case 'horizontal':
         return HorizontalDisplay(
@@ -253,7 +288,8 @@ class TimelineEditor extends ConsumerWidget {
     }
   }
 
-  void _addTask(BuildContext context, WidgetRef ref) {
+  void _addTask(BuildContext context) {
+    final timeline = widget.timeline;
     final isFree = ref.read(schoolProvider).valueOrNull?.isFreeMode ?? false;
     if (isFree && timeline.tasks.length >= 5) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -276,16 +312,16 @@ class TimelineEditor extends ConsumerWidget {
     ref.read(schoolProvider.notifier).updateTimeline(updated);
   }
 
-  void _deleteTask(WidgetRef ref, dynamic taskId) {
-    final updated = timeline.copyWith(
-      tasks: timeline.tasks.where((t) => t.id != taskId).toList(),
+  void _deleteTask(dynamic taskId) {
+    final updated = widget.timeline.copyWith(
+      tasks: widget.timeline.tasks.where((t) => t.id != taskId).toList(),
     );
     ref.read(schoolProvider.notifier).updateTimeline(updated);
   }
 
-  void _adjustTime(WidgetRef ref, dynamic taskId, int delta) {
-    final updated = timeline.copyWith(
-      tasks: timeline.tasks.map((t) {
+  void _adjustTime(dynamic taskId, int delta) {
+    final updated = widget.timeline.copyWith(
+      tasks: widget.timeline.tasks.map((t) {
         if (t.id == taskId) {
           return t.copyWith(
               duration: (t.duration + delta).clamp(5, 180));
@@ -296,12 +332,12 @@ class TimelineEditor extends ConsumerWidget {
     ref.read(schoolProvider.notifier).updateTimeline(updated);
   }
 
-  void _updateStartTime(WidgetRef ref, String time) {
-    final updated = timeline.copyWith(startTime: time);
+  void _updateStartTime(String time) {
+    final updated = widget.timeline.copyWith(startTime: time);
     ref.read(schoolProvider.notifier).updateTimeline(updated);
   }
 
-  void _editTask(BuildContext context, WidgetRef ref, Task task) {
+  void _editTask(BuildContext context, Task task) {
     final schoolId = ref.read(schoolProvider).valueOrNull?.school.id;
     if (schoolId == null) return;
     showDialog(
@@ -311,8 +347,8 @@ class TimelineEditor extends ConsumerWidget {
         schoolId: schoolId,
         isFreeMode: ref.read(schoolProvider).valueOrNull?.isFreeMode ?? false,
         onSave: (updatedTask) {
-          final updated = timeline.copyWith(
-            tasks: timeline.tasks
+          final updated = widget.timeline.copyWith(
+            tasks: widget.timeline.tasks
                 .map((t) => t.id == updatedTask.id ? updatedTask : t)
                 .toList(),
           );
