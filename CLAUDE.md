@@ -54,9 +54,9 @@ flutter test
 
 ## Platform Priority
 
-1. **Web first** — pilot schools use ultra-wide displays via browser
-2. **Android + iOS in parallel** — after web is solid
-3. **Raspberry Pi is NOT part of this project** — removed from scope
+1. **Web first** — pilot schools use ultra-wide displays via browser (or Pi kiosk)
+2. **Android** — native app if factory confirms GMS on built-in Android panels
+3. **iOS** — iPad admin interface (lower priority)
 
 ## Important Rules
 
@@ -84,6 +84,18 @@ Three Twinkl handwriting font families bundled in `assets/fonts/`:
 - TwinklCursiveLooped (5 weights)
 - TwinklCursiveUnlooped (5 weights)
 - TwinklPrecursive (5 weights)
+
+## Hardware Deployment Context
+
+- **Display hardware:** Wall-mounted ultra-wide stretch panel (~43.9", ~3.2:1 aspect ratio) sourced from Chinese factories. Typical native resolutions: 3840x1080 or similar non-standard ultra-wide formats.
+- **Installation:** Tim installs all hardware personally. Schools never configure hardware themselves.
+- **Two hardware routes under evaluation** (pending factory confirmation of GMS/Google Play Store support):
+  - **Route A (preferred if GMS confirmed):** Display with built-in Android 11, GMS-certified. School installs native Flutter Android app from Google Play. The +$50 Android option from factory.
+  - **Route B (fallback if GMS not confirmed):** Display-only panel driven by Raspberry Pi 5. Pi runs Chromium in kiosk mode pointing at the Flutter web build on Vercel. Pi outputs native resolution via custom `video=` parameter in `/boot/firmware/cmdline.txt` (e.g. `video=HDMI-A-1:3840x1080M@60D`). SD cards pre-configured by Tim and cloned per deployment.
+- **Display is view-only.** Teachers manage schedules via their own laptop/phone on the web app. The physical display is mounted out of reach of children and cannot be touched.
+- **Subscription model:** Hardware included in per-display monthly subscription. Tim personally installs each unit. Target: 6-20 classrooms in first 12 months.
+- **Offline resilience is critical.** The display must continue showing the last known schedule if internet drops. Teachers being unable to make changes during an outage is acceptable — the display going blank is not. Implemented via `shared_preferences` caching in providers (`schedule_cache.dart`).
+- **Ultra-wide layout:** The Flutter web app must render correctly at ~3.2:1 aspect ratios. The timeline display is naturally suited to wide horizontal layouts but needs testing at these extreme ratios.
 
 ## Testing
 

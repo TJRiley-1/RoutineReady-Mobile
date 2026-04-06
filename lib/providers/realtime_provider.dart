@@ -7,6 +7,9 @@ import '../models/task.dart';
 import 'auth_provider.dart';
 import 'school_provider.dart';
 
+/// Whether the realtime connection is currently live.
+final realtimeConnectedProvider = StateProvider<bool>((ref) => false);
+
 final realtimeProvider = Provider<RealtimeManager>((ref) {
   return RealtimeManager(ref);
 });
@@ -64,8 +67,10 @@ class RealtimeManager {
         .subscribe((status, [error]) {
           if (status == RealtimeSubscribeStatus.subscribed) {
             _reconnectAttempts = 0;
+            _ref.read(realtimeConnectedProvider.notifier).state = true;
           } else if (status == RealtimeSubscribeStatus.closed ||
                      status == RealtimeSubscribeStatus.channelError) {
+            _ref.read(realtimeConnectedProvider.notifier).state = false;
             _scheduleReconnect();
           }
         });
@@ -126,5 +131,6 @@ class RealtimeManager {
     _reconnectAttempts = 0;
     _channel?.unsubscribe();
     _channel = null;
+    _ref.read(realtimeConnectedProvider.notifier).state = false;
   }
 }

@@ -13,6 +13,7 @@ import '../data/preset_themes.dart';
 import '../utils/time_utils.dart';
 import 'auth_provider.dart';
 import 'membership_provider.dart';
+import 'schedule_cache.dart';
 
 final schoolProvider =
     AsyncNotifierProvider<SchoolNotifier, SchoolState?>(() => SchoolNotifier());
@@ -30,6 +31,7 @@ class SchoolState {
   final bool isSaving;
   final bool isFreeMode;
   final bool isSessionOnlyMode;
+  final bool isUsingCachedData;
 
   SchoolState({
     required this.school,
@@ -44,6 +46,7 @@ class SchoolState {
     this.isSaving = false,
     this.isFreeMode = false,
     this.isSessionOnlyMode = false,
+    this.isUsingCachedData = false,
   });
 
   SchoolState copyWith({
@@ -59,6 +62,7 @@ class SchoolState {
     bool? isSaving,
     bool? isFreeMode,
     bool? isSessionOnlyMode,
+    bool? isUsingCachedData,
   }) {
     return SchoolState(
       school: school ?? this.school,
@@ -73,6 +77,7 @@ class SchoolState {
       isSaving: isSaving ?? this.isSaving,
       isFreeMode: isFreeMode ?? this.isFreeMode,
       isSessionOnlyMode: isSessionOnlyMode ?? this.isSessionOnlyMode,
+      isUsingCachedData: isUsingCachedData ?? this.isUsingCachedData,
     );
   }
 }
@@ -91,14 +96,70 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     final user = ref.watch(currentUserProvider);
     if (user == null) return null;
 
-    // If a classroom is selected (org-based flow), load by classroom ID
-    final selectedClassroom = ref.watch(selectedClassroomProvider);
-    if (selectedClassroom != null) {
-      return _loadByClassroomId(selectedClassroom.id);
+    // Load cached display data first so the display has something to show immediately
+    final cachedState = await _loadFromCache();
+    if (cachedState != null) {
+      state = AsyncData(cachedState);
     }
 
-    // Legacy flow: load by owner_id (for users without org membership)
-    return _loadAllData(user.id);
+    try {
+      // If a classroom is selected (org-based flow), load by classroom ID
+      final selectedClassroom = ref.watch(selectedClassroomProvider);
+      SchoolState? result;
+      if (selectedClassroom != null) {
+        result = await _loadByClassroomId(selectedClassroom.id);
+      } else {
+        // Legacy flow: load by owner_id (for users without org membership)
+        result = await _loadAllData(user.id);
+      }
+
+      if (result != null) {
+        // Cache display-critical data for offline resilience
+        _cacheDisplayData(result);
+        return result;
+      }
+
+      // Supabase returned null (no school found) — keep cache if available
+      return cachedState;
+    } catch (e) {
+      // Supabase failed — fall back to cached data silently
+      if (cachedState != null) return cachedState;
+      rethrow;
+    }
+  }
+
+  /// Build a minimal SchoolState from cached timeline + display settings.
+  Future<SchoolState?> _loadFromCache() async {
+    final timeline = await ScheduleCache.loadTimeline();
+    if (timeline == null) return null;
+
+    final dsData = await ScheduleCache.loadDisplaySettings();
+
+    return SchoolState(
+      school: School(
+        id: 'cached',
+        ownerId: '',
+        schoolName: '',
+        className: '',
+        teacherName: '',
+      ),
+      timeline: timeline,
+      displaySettings: dsData?.settings ?? const DisplaySettings(),
+      currentTheme: dsData?.currentTheme ?? 'routine-ready',
+      customThemes: dsData?.customThemes ?? const [],
+      weeklySchedule: WeeklySchedule(),
+      isUsingCachedData: true,
+    );
+  }
+
+  /// Cache display-critical data (fire-and-forget).
+  void _cacheDisplayData(SchoolState schoolState) {
+    ScheduleCache.saveAll(
+      schoolState.timeline,
+      schoolState.displaySettings,
+      schoolState.currentTheme,
+      schoolState.customThemes,
+    );
   }
 
   /// Re-fetch all data from Supabase (e.g. after realtime reconnection).
@@ -106,15 +167,24 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     final current = state.valueOrNull;
     if (current != null && current.isFreeMode) return; // Free mode: no DB to reload from
 
-    final selectedClassroom = ref.read(selectedClassroomProvider);
-    if (selectedClassroom != null) {
-      state = AsyncData(await _loadByClassroomId(selectedClassroom.id));
-      return;
-    }
+    try {
+      final selectedClassroom = ref.read(selectedClassroomProvider);
+      SchoolState? result;
+      if (selectedClassroom != null) {
+        result = await _loadByClassroomId(selectedClassroom.id);
+      } else {
+        final user = ref.read(currentUserProvider);
+        if (user == null) return;
+        result = await _loadAllData(user.id);
+      }
 
-    final user = ref.read(currentUserProvider);
-    if (user == null) return;
-    state = AsyncData(await _loadAllData(user.id));
+      if (result != null) {
+        _cacheDisplayData(result);
+        state = AsyncData(result);
+      }
+    } catch (_) {
+      // Reload failed (network down) — keep current state (may be cached)
+    }
   }
 
   /// Enable session-only mode (staff/non-owner edits don't persist).
@@ -417,7 +487,9 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     state = AsyncData(current.copyWith(
       timeline: timeline,
       hasUnsavedChanges: true,
+      isUsingCachedData: false,
     ));
+    ScheduleCache.saveTimeline(timeline);
     _timelineDebounce?.cancel();
     _timelineDebounce = Timer(_debounceDelay, () {
       _saveTimelineToDb(timeline, current.activeTemplateId);
@@ -427,7 +499,11 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
   void updateDisplaySettings(DisplaySettings settings) {
     final current = state.valueOrNull;
     if (current == null) return;
-    state = AsyncData(current.copyWith(displaySettings: settings));
+    state = AsyncData(current.copyWith(
+      displaySettings: settings,
+      isUsingCachedData: false,
+    ));
+    ScheduleCache.saveDisplaySettings(settings, current.currentTheme, current.customThemes);
     _displaySettingsDebounce?.cancel();
     _displaySettingsDebounce = Timer(_debounceDelay, () {
       _saveDisplaySettingsToDb(settings, current.currentTheme);
@@ -437,7 +513,11 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
   void updateCurrentTheme(String themeId) {
     final current = state.valueOrNull;
     if (current == null) return;
-    state = AsyncData(current.copyWith(currentTheme: themeId));
+    state = AsyncData(current.copyWith(
+      currentTheme: themeId,
+      isUsingCachedData: false,
+    ));
+    ScheduleCache.saveDisplaySettings(current.displaySettings, themeId, current.customThemes);
     _displaySettingsDebounce?.cancel();
     _displaySettingsDebounce = Timer(_debounceDelay, () {
       _saveDisplaySettingsToDb(current.displaySettings, themeId);

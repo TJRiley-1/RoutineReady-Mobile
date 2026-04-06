@@ -12,42 +12,88 @@ final isStaffAdminProvider = Provider<bool>((ref) {
 
 final staffAdminModeProvider = StateProvider<bool>((ref) => false);
 
+// --- Safe response parsing helpers ---
+
+List<Map<String, dynamic>> _parseList(dynamic data, String fallbackError) {
+  if (data is List) {
+    return data.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+  }
+  final error = data is Map ? data['error'] : null;
+  throw Exception(error ?? fallbackError);
+}
+
+Map<String, dynamic> _parseMap(dynamic data, String fallbackError) {
+  if (data is Map) {
+    final map = Map<String, dynamic>.from(data);
+    if (map.containsKey('error')) throw Exception(map['error']);
+    return map;
+  }
+  throw Exception(fallbackError);
+}
+
 // --- Data providers ---
 
 final staffAdminOrgsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final client = ref.read(supabaseClientProvider);
-  final res = await client.functions.invoke('staff-admin', body: {
-    'action': 'list_organizations',
-  });
-  if (res.status != 200) {
-    throw Exception(res.data?['error'] ?? 'Failed to load organizations');
+  try {
+    final client = ref.read(supabaseClientProvider);
+    final res = await client.functions.invoke('staff-admin', body: {
+      'action': 'list_organizations',
+    });
+    if (res.status != 200) {
+      throw Exception(res.data is Map ? res.data['error'] : 'Failed to load organizations');
+    }
+    return _parseList(res.data, 'Failed to load organizations');
+  } catch (e) {
+    throw Exception(_cleanError(e));
   }
-  return List<Map<String, dynamic>>.from(res.data as List);
 });
 
 final staffAdminOrgDetailProvider =
     FutureProvider.family<Map<String, dynamic>, String>((ref, orgId) async {
-  final client = ref.read(supabaseClientProvider);
-  final res = await client.functions.invoke('staff-admin', body: {
-    'action': 'get_organization',
-    'org_id': orgId,
-  });
-  if (res.status != 200) {
-    throw Exception(res.data?['error'] ?? 'Failed to load organization');
+  try {
+    final client = ref.read(supabaseClientProvider);
+    final res = await client.functions.invoke('staff-admin', body: {
+      'action': 'get_organization',
+      'org_id': orgId,
+    });
+    if (res.status != 200) {
+      throw Exception(res.data is Map ? res.data['error'] : 'Failed to load organization');
+    }
+    return _parseMap(res.data, 'Failed to load organization');
+  } catch (e) {
+    throw Exception(_cleanError(e));
   }
-  return Map<String, dynamic>.from(res.data as Map);
 });
 
 final staffAdminUsersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final client = ref.read(supabaseClientProvider);
-  final res = await client.functions.invoke('staff-admin', body: {
-    'action': 'list_users',
-  });
-  if (res.status != 200) {
-    throw Exception(res.data?['error'] ?? 'Failed to load users');
+  try {
+    final client = ref.read(supabaseClientProvider);
+    final res = await client.functions.invoke('staff-admin', body: {
+      'action': 'list_users',
+    });
+    if (res.status != 200) {
+      throw Exception(res.data is Map ? res.data['error'] : 'Failed to load users');
+    }
+    return _parseList(res.data, 'Failed to load users');
+  } catch (e) {
+    throw Exception(_cleanError(e));
   }
-  return List<Map<String, dynamic>>.from(res.data as List);
 });
+
+// --- Error cleaning ---
+
+String _cleanError(Object e) {
+  final msg = e.toString();
+  // Strip nested "Exception: " prefixes for cleaner UI display
+  final cleaned = msg.replaceAll(RegExp(r'^(Exception:\s*)+'), '');
+  if (cleaned.contains('Failed host lookup') || cleaned.contains('SocketException')) {
+    return 'Network error. Please check your connection and try again.';
+  }
+  if (cleaned.contains('FunctionException') || cleaned.contains('<!DOCTYPE')) {
+    return 'Something went wrong. Please try again.';
+  }
+  return cleaned.isEmpty ? 'Something went wrong. Please try again.' : cleaned;
+}
 
 // --- Actions ---
 
@@ -56,12 +102,17 @@ class StaffAdminActions {
   StaffAdminActions(this._ref);
 
   Future<Map<String, dynamic>> _invoke(Map<String, dynamic> body) async {
-    final client = _ref.read(supabaseClientProvider);
-    final res = await client.functions.invoke('staff-admin', body: body);
-    if (res.status != 200) {
-      throw Exception(res.data?['error'] ?? 'Request failed');
+    try {
+      final client = _ref.read(supabaseClientProvider);
+      final res = await client.functions.invoke('staff-admin', body: body);
+      if (res.status != 200) {
+        final error = res.data is Map ? res.data['error'] : 'Request failed';
+        throw Exception(error ?? 'Request failed');
+      }
+      return res.data is Map ? Map<String, dynamic>.from(res.data as Map) : {'result': res.data};
+    } catch (e) {
+      throw Exception(_cleanError(e));
     }
-    return res.data is Map ? Map<String, dynamic>.from(res.data as Map) : {'result': res.data};
   }
 
   // Organizations

@@ -27,7 +27,6 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
   Timer? _timer;
   int _currentTaskIndex = -1;
   double _elapsedInTask = 0;
-  bool _isOffline = false;
 
   @override
   void initState() {
@@ -76,7 +75,6 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
       if (schoolState != null) {
         ref.read(realtimeProvider).subscribe(schoolState.school.id);
       }
-      setState(() => _isOffline = false);
       _updateProgress();
     }
   }
@@ -144,29 +142,18 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
               ),
             ),
           ),
-          // Offline indicator
-          if (_isOffline)
+          // Subtle offline indicator — small grey dot in bottom-left corner,
+          // visible to teachers but not distracting to children
+          if (_isOffline(schoolState))
             Positioned(
-              top: 8,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.wifi_off, size: 16, color: Colors.amber),
-                      SizedBox(width: 6),
-                      Text('Offline - reconnecting...',
-                          style: TextStyle(fontSize: 12)),
-                    ],
-                  ),
+              bottom: 6,
+              left: 6,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  shape: BoxShape.circle,
                 ),
               ),
             ),
@@ -242,6 +229,10 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
           elapsedInTask: _elapsedInTask,
         );
     }
+  }
+
+  bool _isOffline(SchoolState schoolState) {
+    return schoolState.isUsingCachedData;
   }
 
   void _exitToModeSelect() {
