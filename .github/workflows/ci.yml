@@ -1,0 +1,32 @@
+name: CI
+
+# Runs the checks on every push to main. Deployment is done manually with
+# ./deploy.sh — there is intentionally no auto-deploy step here (and so no
+# Vercel token is needed in GitHub secrets).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+
+      # Fail only on warnings/errors, not on cosmetic info-level lints.
+      - run: flutter analyze --no-fatal-infos
+
+      - run: flutter test
+
+      # Compile-check the web target (does not deploy).
+      - name: Build web
+        run: flutter build web --release --base-href "/app/"
