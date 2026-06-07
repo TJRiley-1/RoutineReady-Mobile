@@ -16,9 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Pin the Flutter version so CI matches local and doesn't break when a
+      # newer stable is released. 3.41.4 is the verified-working version
+      # (unpinned "latest stable" was failing the web build because a newer
+      # Flutter rejects flutter_secure_storage_web's dart:html import).
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.41.4
 
       - run: flutter pub get
 
