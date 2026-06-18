@@ -180,7 +180,7 @@ class _TimeCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 40,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
+              color: Color(0xFF1C2B2A),
             ),
           ),
           const SizedBox(height: 8),

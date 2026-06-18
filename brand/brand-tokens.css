@@ -1,0 +1,31 @@
+/* RoutineReady brand tokens — single source of truth (web/HTML surfaces).
+   Mirrors brand/BRAND.md. Canonical = the website palette. */
+:root {
+  /* Teal (primary) */
+  --rr-teal:        #1a7f7a;
+  --rr-teal-light:  #2a9e98;
+  --rr-teal-dark:   #0f5550;
+  --rr-teal-faint:  #f0faf9;
+  --rr-teal-mid:    #c8e9e7;
+
+  /* Amber (accent — use sparingly) */
+  --rr-amber:       #f59e0b;
+  --rr-amber-dark:  #d97706;
+
+  /* Neutrals */
+  --rr-dark:        #1c2b2a;   /* headlines + body (warm near-black) */
+  --rr-warm-gray:   #6b7280;   /* muted/secondary text */
+  --rr-cream:       #faf8f5;   /* page background */
+  --rr-white:       #ffffff;   /* surfaces */
+  --rr-border:      #e8eceb;   /* hairline borders */
+
+  /* Type */
+  --rr-font-heading: 'Lora', Georgia, 'Times New Roman', serif;
+  --rr-font-body:    'DM Sans', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* Shape & depth */
+  --rr-radius-card:   12px;
+  --rr-radius-button: 6px;
+  --rr-radius-badge:  8px;
+  --rr-shadow-soft:   0 4px 24px rgba(26, 127, 122, 0.08);
+}

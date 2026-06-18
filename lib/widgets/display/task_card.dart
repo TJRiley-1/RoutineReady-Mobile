@@ -119,7 +119,7 @@ class TaskCard extends StatelessWidget {
                         : task.content,
                     textAlign: TextAlign.center,
                     style: getThemeTextStyle(theme, fontSize).copyWith(
-                      color: const Color(0xFF1F2937),
+                      color: const Color(0xFF1C2B2A),
                     ),
                   ),
                   const SizedBox(height: 8),

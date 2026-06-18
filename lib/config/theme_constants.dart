@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color brandPrimary = Color(0xFF0D9488);
-  static const Color brandPrimaryDark = Color(0xFF0F766E);
-  static const Color brandAccent = Color(0xFFF59E0B);
+  // Canonical brand palette — see /brand (BRAND.md, brand-tokens.json).
+  // Source of truth is the website (routineready.co.uk).
+  static const Color brandPrimary = Color(0xFF1A7F7A); // teal
+  static const Color brandPrimaryDark = Color(0xFF0F5550); // teal-dark
+  static const Color brandPrimaryLight = Color(0xFF2A9E98); // teal-light
+  static const Color brandAccent = Color(0xFFF59E0B); // amber
   static const Color brandAccentLight = Color(0xFFFBBF24);
   static const Color brandSuccess = Color(0xFF16A34A);
   static const Color brandError = Color(0xFFEF4444);
-  static const Color brandText = Color(0xFF1F2937);
-  static const Color brandTextMuted = Color(0xFF6B7280);
-  static const Color brandBorder = Color(0xFFE5E7EB);
-  static const Color brandBgSubtle = Color(0xFFF9FAFB);
-  static const Color brandPrimaryBg = Color(0xFFF0FDFA);
+  static const Color brandText = Color(0xFF1C2B2A); // warm near-black
+  static const Color brandTextMuted = Color(0xFF6B7280); // warm-gray
+  static const Color brandBorder = Color(0xFFE8ECEB);
+  static const Color brandBgSubtle = Color(0xFFFAF8F5); // cream
+  static const Color brandPrimaryBg = Color(0xFFF0FAF9); // teal-faint
 }
 
 class AppTheme {
@@ -20,7 +23,7 @@ class AppTheme {
       useMaterial3: true,
       colorSchemeSeed: AppColors.brandPrimary,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: const Color(0xFFF3F4F6),
+      scaffoldBackgroundColor: AppColors.brandBgSubtle,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.brandText,
