@@ -13,6 +13,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/set_password_screen.dart';
 import 'screens/auth/setup_wizard_screen.dart';
 import 'screens/classroom_picker/classroom_picker_screen.dart';
+import 'screens/classroom_picker/all_classrooms_picker_screen.dart';
 import 'screens/mode_select/mode_select_screen.dart';
 import 'screens/display/display_screen.dart';
 import 'screens/admin/admin_shell.dart';
@@ -84,9 +85,13 @@ class _AuthenticatedRouter extends ConsumerWidget {
 
     // RoutineReady staff always land on the staff gate first — even if their
     // account also has an org membership — so Staff Admin is always reachable.
-    // They can opt into the normal member view from the gate.
+    // They can opt into the all-orgs classroom view from the gate.
     if (isStaffAdmin && !ref.watch(staffViewAsMemberProvider)) {
       return _StaffAdminGate();
+    }
+    // Staff in member view: super-admin over all orgs' classrooms.
+    if (isStaffAdmin) {
+      return const _StaffMemberRouter();
     }
 
     final membershipAsync = ref.watch(membershipProvider);
@@ -123,14 +128,65 @@ class _AuthenticatedRouter extends ConsumerWidget {
   }
 }
 
+/// Super-admin classroom flow for RoutineReady staff: pick any classroom from
+/// any org, then edit it full like a school admin. School load is driven purely
+/// by the selected classroom (RLS staff bypass permits read/write).
+class _StaffMemberRouter extends ConsumerWidget {
+  const _StaffMemberRouter();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedClassroom = ref.watch(selectedClassroomProvider);
+    final sessionMode = ref.watch(sessionModeProvider);
+
+    if (selectedClassroom == null) {
+      return const AllClassroomsPickerScreen();
+    }
+
+    final schoolState = ref.watch(schoolProvider);
+
+    return schoolState.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Error loading classroom: $e'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(schoolProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (state) {
+        if (state == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (sessionMode == null) {
+          return const ModeSelectScreen();
+        }
+        if (sessionMode == 'display') {
+          return const DisplayScreen();
+        }
+        return const AdminShell();
+      },
+    );
+  }
+}
+
 /// Gate screen for RoutineReady staff. Always reachable for staff accounts so
 /// Staff Admin is never blocked by also having an org membership.
 class _StaffAdminGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasMembership =
-        ref.watch(membershipProvider).valueOrNull != null;
-
     return Scaffold(
       body: Center(
         child: Column(
@@ -157,19 +213,17 @@ class _StaffAdminGate extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               ),
             ),
-            if (hasMembership) ...[
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () {
-                  ref.read(staffViewAsMemberProvider.notifier).state = true;
-                },
-                icon: const Icon(Icons.meeting_room_outlined),
-                label: const Text('Continue to classrooms'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                ref.read(staffViewAsMemberProvider.notifier).state = true;
+              },
+              icon: const Icon(Icons.meeting_room_outlined),
+              label: const Text('View all classrooms'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               ),
-            ],
+            ),
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => ref.read(authActionsProvider).signOut(),

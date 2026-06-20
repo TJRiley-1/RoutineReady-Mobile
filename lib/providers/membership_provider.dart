@@ -61,6 +61,33 @@ final classroomsProvider = FutureProvider<List<School>>((ref) async {
   return (res as List).map((s) => School.fromJson(s)).toList();
 });
 
+/// All classrooms across every org, grouped by org — for RoutineReady staff
+/// super-admins. Relies on the staff RLS read bypass (is_routineready_staff).
+typedef OrgClassrooms = ({Organization org, List<School> classrooms});
+
+final staffAllClassroomsProvider =
+    FutureProvider<List<OrgClassrooms>>((ref) async {
+  final client = ref.read(supabaseClientProvider);
+
+  final orgsRes = await client.from('organizations').select().order('name');
+  final schoolsRes = await client.from('schools').select().order('class_name');
+
+  final orgs = (orgsRes as List).map((o) => Organization.fromJson(o)).toList();
+  final schools = (schoolsRes as List).map((s) => School.fromJson(s)).toList();
+
+  final byOrg = <String, List<School>>{};
+  for (final s in schools) {
+    if (s.orgId == null) continue;
+    byOrg.putIfAbsent(s.orgId!, () => []).add(s);
+  }
+
+  return [
+    for (final org in orgs)
+      if ((byOrg[org.id] ?? const []).isNotEmpty)
+        (org: org, classrooms: byOrg[org.id]!),
+  ];
+});
+
 /// Currently selected classroom.
 final selectedClassroomProvider = StateProvider<School?>((ref) => null);
 
