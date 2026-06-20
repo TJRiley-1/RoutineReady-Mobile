@@ -306,12 +306,10 @@ class _RoleBasedRouter extends ConsumerWidget {
             // Staff goes straight to display (can edit session-only)
             return const DisplayScreen();
 
-          case UserRole.schoolAdmin:
-            // School admin goes straight to display (read-only viewing)
-            return const DisplayScreen();
-
           case UserRole.teacher:
-            // Teacher gets mode select (display vs admin)
+          case UserRole.schoolAdmin:
+            // Full editor for any classroom they pick in their org.
+            // (School admin is org-wide; teacher manages their classrooms.)
             if (sessionMode == null) {
               return const ModeSelectScreen();
             }

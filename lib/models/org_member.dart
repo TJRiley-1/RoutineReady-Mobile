@@ -51,9 +51,14 @@ class OrgMember {
     );
   }
 
-  bool get canEdit => role == UserRole.teacher || role == UserRole.staff;
-  bool get canSave => role == UserRole.teacher;
-  bool get canAccessAdmin => role == UserRole.teacher;
+  bool get canEdit =>
+      role == UserRole.teacher ||
+      role == UserRole.staff ||
+      role == UserRole.schoolAdmin;
+  bool get canSave =>
+      role == UserRole.teacher || role == UserRole.schoolAdmin;
+  bool get canAccessAdmin =>
+      role == UserRole.teacher || role == UserRole.schoolAdmin;
   bool get isDisplayOnly => role == UserRole.display;
   bool get isSessionOnly => role == UserRole.staff;
 }
