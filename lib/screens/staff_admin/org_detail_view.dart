@@ -4,6 +4,7 @@ import '../../config/theme_constants.dart';
 import '../../providers/staff_admin_provider.dart';
 import 'dialogs/add_member_dialog.dart';
 import 'dialogs/edit_school_dialog.dart';
+import 'dialogs/invite_member_dialog.dart';
 
 class OrgDetailView extends ConsumerStatefulWidget {
   final String orgId;
@@ -205,6 +206,15 @@ class _OrgDetailViewState extends ConsumerState<OrgDetailView> {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const Spacer(),
+                    OutlinedButton.icon(
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (_) => InviteMemberDialog(orgId: widget.orgId),
+                      ),
+                      icon: const Icon(Icons.mail_outline, size: 18),
+                      label: const Text('Invite Member'),
+                    ),
+                    const SizedBox(width: 8),
                     ElevatedButton.icon(
                       onPressed: () => showDialog(
                         context: context,

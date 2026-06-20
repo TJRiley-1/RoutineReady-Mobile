@@ -50,7 +50,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
 
     try {
       await ref.read(authActionsProvider).updatePassword(password);
-      ref.read(passwordRecoveryProvider.notifier).state = false;
+      ref.read(mustSetPasswordProvider.notifier).state = false;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Password updated')),
@@ -64,7 +64,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
   }
 
   Future<void> _cancel() async {
-    ref.read(passwordRecoveryProvider.notifier).state = false;
+    ref.read(mustSetPasswordProvider.notifier).state = false;
     await ref.read(authActionsProvider).signOut();
   }
 
@@ -92,7 +92,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                 const Text('✅', style: TextStyle(fontSize: 64)),
                 const SizedBox(height: 16),
                 const Text(
-                  'Set a new password',
+                  'Set your password',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -102,7 +102,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Choose a new password for your account.',
+                  'Choose a password for your account.',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColors.brandTextMuted,

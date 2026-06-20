@@ -24,10 +24,24 @@ final authActionsProvider = Provider<AuthActions>((ref) {
   return AuthActions(ref);
 });
 
-/// True while the user is in a password-recovery session (arrived via a reset
-/// link) and must set a new password before entering the app. Latched on the
-/// `AuthChangeEvent.passwordRecovery` event; cleared once the password is set.
-final passwordRecoveryProvider = StateProvider<bool>((ref) => false);
+/// True while the user must set a password before entering the app — either a
+/// password-recovery session (reset link) or a freshly accepted invite. Set on
+/// the `AuthChangeEvent.passwordRecovery` event or seeded from the launch URL
+/// `type` (invite/recovery); cleared once the password is set.
+final mustSetPasswordProvider = StateProvider<bool>((ref) => false);
+
+/// The `type` param from the launch URL (e.g. 'invite', 'recovery'), captured in
+/// main() before Supabase consumes the URL. Used to seed [mustSetPasswordProvider].
+String? launchAuthType;
+
+/// Extracts the auth `type` from a launch [uri] — checks query params and, for
+/// the implicit flow, the URL fragment (e.g. `#access_token=...&type=invite`).
+String? extractAuthType(Uri uri) {
+  final fromQuery = uri.queryParameters['type'];
+  if (fromQuery != null && fromQuery.isNotEmpty) return fromQuery;
+  if (uri.fragment.isEmpty) return null;
+  return Uri.splitQueryString(uri.fragment)['type'];
+}
 
 class AuthActions {
   final Ref _ref;

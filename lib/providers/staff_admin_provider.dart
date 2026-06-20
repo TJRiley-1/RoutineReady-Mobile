@@ -202,6 +202,21 @@ class StaffAdminActions {
     if (orgId != null) _ref.invalidate(staffAdminOrgDetailProvider(orgId));
   }
 
+  Future<void> inviteUser({
+    required String email,
+    String? orgId,
+    String? role,
+  }) async {
+    await _invoke({
+      'action': 'invite_user',
+      'email': email,
+      if (orgId != null) 'org_id': orgId,
+      if (role != null) 'role': role,
+    });
+    _ref.invalidate(staffAdminUsersProvider);
+    if (orgId != null) _ref.invalidate(staffAdminOrgDetailProvider(orgId));
+  }
+
   Future<void> deleteUser(String userId) async {
     await _invoke({'action': 'delete_user', 'user_id': userId});
     _ref.invalidate(staffAdminUsersProvider);

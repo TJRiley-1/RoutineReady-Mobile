@@ -39,13 +39,13 @@ class _AppRouter extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
-    final inRecovery = ref.watch(passwordRecoveryProvider);
+    final mustSetPassword = ref.watch(mustSetPasswordProvider);
 
     // Latch recovery mode so it survives the subsequent userUpdated event.
     ref.listen(authStateProvider, (_, next) {
       next.whenData((state) {
         if (state.event == AuthChangeEvent.passwordRecovery) {
-          ref.read(passwordRecoveryProvider.notifier).state = true;
+          ref.read(mustSetPasswordProvider.notifier).state = true;
         }
       });
     });
@@ -56,9 +56,9 @@ class _AppRouter extends ConsumerWidget {
       ),
       error: (_, _) => const LoginScreen(),
       data: (state) {
-        // Must intercept before the session check — recovery arrives WITH a
-        // session. Direct event check avoids a flash before the flag latches.
-        if (inRecovery || state.event == AuthChangeEvent.passwordRecovery) {
+        // Must intercept before the session check — recovery/invite arrive WITH
+        // a session. Direct event check avoids a flash before the flag latches.
+        if (mustSetPassword || state.event == AuthChangeEvent.passwordRecovery) {
           return const SetPasswordScreen();
         }
         if (state.session == null) {
