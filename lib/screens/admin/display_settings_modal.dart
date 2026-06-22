@@ -85,16 +85,14 @@ class _DisplaySettingsModalState extends ConsumerState<DisplaySettingsModal> {
                       const SizedBox(height: 16),
 
                       if (_settings.mode == 'multi-row') ...[
-                        Text('Rows: ${_settings.rows}'),
-                        Slider(
-                          value: _settings.rows.toDouble(),
-                          min: 1,
-                          max: (_settings.height / 250).floor().clamp(1, 6).toDouble(),
-                          divisions: ((_settings.height / 250).floor().clamp(1, 6) - 1).clamp(1, 5),
-                          onChanged: (v) =>
-                              _update(_settings.copyWith(rows: v.round())),
+                        const Text(
+                          'Rows are automatic — set the row (road) width in the '
+                          'task editor, under the live preview. Cards wrap to a '
+                          'new row at the edge.',
+                          style: TextStyle(
+                              fontSize: 11, color: AppColors.brandTextMuted),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         const Text('Path Direction',
                             style: TextStyle(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 8),
@@ -584,34 +582,11 @@ class _DisplaySettingsModalState extends ConsumerState<DisplaySettingsModal> {
     final maxCardsPerRow = (displayWidth / slotWidth).floor().clamp(1, 100);
 
     if (currentMode == 'horizontal' && taskCount > maxCardsPerRow) {
-      final optimalRows = (taskCount / maxCardsPerRow).ceil().clamp(1, 6);
       return _LayoutRecommendation(
         message:
-            'For $taskCount tasks on ${displayWidth}x$displayHeight, we recommend: Multi-Row, $optimalRows rows',
+            'For $taskCount tasks on ${displayWidth}x$displayHeight, we recommend Multi-Row — cards wrap across rows automatically (tune the row width in the task editor).',
         mode: 'multi-row',
-        rows: optimalRows,
       );
-    }
-
-    if (currentMode == 'multi-row') {
-      final optimalRows = (taskCount / maxCardsPerRow).ceil().clamp(1, 6);
-      final maxRowsFit = (displayHeight / 250).floor().clamp(1, 6);
-      if (optimalRows > maxRowsFit) {
-        return _LayoutRecommendation(
-          message:
-              'Too many tasks for multi-row at this resolution. We recommend: Auto-Pan mode',
-          mode: 'auto-pan',
-          rows: 1,
-        );
-      }
-      if (_settings.rows != optimalRows) {
-        return _LayoutRecommendation(
-          message:
-              'For $taskCount tasks on ${displayWidth}x$displayHeight, we recommend: $optimalRows rows',
-          mode: 'multi-row',
-          rows: optimalRows,
-        );
-      }
     }
 
     return null;
@@ -621,15 +596,13 @@ class _DisplaySettingsModalState extends ConsumerState<DisplaySettingsModal> {
 class _LayoutRecommendation {
   final String message;
   final String mode;
-  final int rows;
 
   const _LayoutRecommendation({
     required this.message,
     required this.mode,
-    required this.rows,
   });
 
   DisplaySettings applyTo(DisplaySettings settings) {
-    return settings.copyWith(mode: mode, rows: rows);
+    return settings.copyWith(mode: mode);
   }
 }

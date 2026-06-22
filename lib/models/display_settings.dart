@@ -19,6 +19,11 @@ class DisplaySettings {
   final int autoPanRoadWidth;
   final bool autoOptimise;
 
+  /// Multi-row mode: usable width as a percentage of the display width. Cards
+  /// flow left→right and wrap to the next row when they'd exceed this width, so
+  /// the number of rows is automatic. Per-template.
+  final int multiRowWidth;
+
   const DisplaySettings({
     this.width = 2560,
     this.height = 1080,
@@ -39,6 +44,7 @@ class DisplaySettings {
     this.roadHeight = 32,
     this.autoPanRoadWidth = 40,
     this.autoOptimise = false,
+    this.multiRowWidth = 100,
   });
 
   factory DisplaySettings.fromDbJson(Map<String, dynamic> json) {
@@ -62,6 +68,7 @@ class DisplaySettings {
       roadHeight: json['road_height'] as int? ?? 32,
       autoPanRoadWidth: json['auto_pan_road_width'] as int? ?? 40,
       autoOptimise: json['auto_optimise'] as bool? ?? false,
+      multiRowWidth: json['multi_row_width'] as int? ?? 100,
     );
   }
 
@@ -85,6 +92,7 @@ class DisplaySettings {
         'road_height': roadHeight,
         'auto_pan_road_width': autoPanRoadWidth,
         'auto_optimise': autoOptimise,
+        'multi_row_width': multiRowWidth,
       };
 
   /// DB keys that stay classroom-wide (live in `display_settings`, not on a
@@ -131,6 +139,7 @@ class DisplaySettings {
     int? roadHeight,
     int? autoPanRoadWidth,
     bool? autoOptimise,
+    int? multiRowWidth,
   }) {
     return DisplaySettings(
       width: width ?? this.width,
@@ -152,6 +161,7 @@ class DisplaySettings {
       roadHeight: roadHeight ?? this.roadHeight,
       autoPanRoadWidth: autoPanRoadWidth ?? this.autoPanRoadWidth,
       autoOptimise: autoOptimise ?? this.autoOptimise,
+      multiRowWidth: multiRowWidth ?? this.multiRowWidth,
     );
   }
 }

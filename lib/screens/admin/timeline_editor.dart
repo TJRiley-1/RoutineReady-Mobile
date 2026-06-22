@@ -213,6 +213,44 @@ class _TimelineEditorState extends ConsumerState<TimelineEditor> {
             ),
             const SizedBox(height: 8),
 
+            // Road width — multi-row only. Lives here (not in Display Settings)
+            // so the reflow is visible live in the preview below. Saved per
+            // template via updateDisplaySettings.
+            if (displaySettings.mode == 'multi-row') ...[
+              Row(
+                children: [
+                  const Icon(Icons.swap_horiz,
+                      size: 18, color: AppColors.brandTextMuted),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Road width: ${displaySettings.multiRowWidth}%',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.brandText,
+                    ),
+                  ),
+                ],
+              ),
+              Slider(
+                value: displaySettings.multiRowWidth.clamp(40, 100).toDouble(),
+                min: 40,
+                max: 100,
+                divisions: 12,
+                label: '${displaySettings.multiRowWidth}%',
+                onChanged: (v) => ref
+                    .read(schoolProvider.notifier)
+                    .updateDisplaySettings(
+                        displaySettings.copyWith(multiRowWidth: v.round())),
+              ),
+              const Text(
+                'Wider fills more of the display; cards wrap to the next row at the edge.',
+                style:
+                    TextStyle(fontSize: 11, color: AppColors.brandTextMuted),
+              ),
+              const SizedBox(height: 12),
+            ],
+
             // Live preview — use LayoutBuilder to fill available width
             LayoutBuilder(
               builder: (context, constraints) {
