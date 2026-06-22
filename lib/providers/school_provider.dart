@@ -597,6 +597,18 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     await _saveTimelineSnapshotToDb(settings, theme);
   }
 
+  /// Immediately persists the current display settings, cancelling the pending
+  /// debounce. Called when the settings dialog closes so a quick reload straight
+  /// after doesn't drop the last change (the 800ms debounce would otherwise
+  /// still be waiting). No-op when saving is unavailable (free/staff session).
+  void flushDisplaySettings() {
+    final current = state.valueOrNull;
+    if (current == null || _skipDbWrites) return;
+    _displaySettingsDebounce?.cancel();
+    _persistSettingsEdit(
+        current.displaySettings, current.currentTheme, current.activeTemplateId);
+  }
+
   /// Flushes any pending settings edit immediately. Throws if saving is
   /// unavailable so the dialog can surface why nothing persisted.
   Future<void> saveDisplaySettingsNow() async {

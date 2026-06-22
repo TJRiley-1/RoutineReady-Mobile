@@ -25,6 +25,15 @@ class _DisplaySettingsModalState extends ConsumerState<DisplaySettingsModal> {
             const DisplaySettings();
   }
 
+  @override
+  void dispose() {
+    // Closing the dialog flushes the pending debounced auto-save immediately so
+    // a quick reload right after doesn't drop the last change. Mirrors the old
+    // explicit Save button.
+    ref.read(schoolProvider.notifier).flushDisplaySettings();
+    super.dispose();
+  }
+
   void _update(DisplaySettings s) {
     setState(() => _settings = s);
     // Auto-saves (debounced): classroom-wide fields (mode/transition/size) to the
