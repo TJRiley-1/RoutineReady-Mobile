@@ -531,8 +531,9 @@ void main() {
         'role': 'school_admin',
       });
       expect(m.role, UserRole.schoolAdmin);
-      expect(m.canEdit, false);
-      expect(m.canSave, false);
+      expect(m.canEdit, true);
+      expect(m.canSave, true);
+      expect(m.canAccessAdmin, true);
     });
   });
 
