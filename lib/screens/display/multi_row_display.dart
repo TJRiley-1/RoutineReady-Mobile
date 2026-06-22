@@ -59,7 +59,11 @@ class MultiRowDisplay extends StatelessWidget {
           children: [
             for (var r = 0; r < rowsIdx.length; r++) ...[
               if (r > 0) const SizedBox(height: 24),
-              _buildRow(rowsIdx[r], isSnake && r.isOdd),
+              _buildRow(
+                rowsIdx[r],
+                isSnake && r.isOdd,
+                r < rowsIdx.length - 1,
+              ),
             ],
           ],
         ),
@@ -97,7 +101,7 @@ class MultiRowDisplay extends StatelessWidget {
     return rows;
   }
 
-  Widget _buildRow(List<int> indices, bool isReversed) {
+  Widget _buildRow(List<int> indices, bool isReversed, bool hasNext) {
     final ordered = isReversed ? indices.reversed.toList() : indices;
     final startTime = _calculateTimeAtIndex(indices.first);
     final endTime = _calculateTimeAtIndex(indices.last + 1);
@@ -109,6 +113,9 @@ class MultiRowDisplay extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _timeLabel(isReversed ? endTime : startTime),
+          // For snake (reversed) rows the outgoing edge — where the road drops
+          // to the next row — is on the left, so the bridge sits before the cards.
+          if (isReversed && hasNext) _bridge(indices.last),
           ...List.generate(ordered.length, (j) {
             final idx = ordered[j];
             final task = timeline.tasks[idx];
@@ -143,9 +150,34 @@ class MultiRowDisplay extends StatelessWidget {
               ],
             );
           }),
+          // Normal rows: the road continues off the right edge to the next row.
+          if (!isReversed && hasNext) _bridge(indices.last),
           _timeLabel(isReversed ? startTime : endTime),
         ],
       ),
+    );
+  }
+
+  /// The transition that carries the road from a row's last task ([taskIndex])
+  /// onto the next row. Shown at the row's outgoing edge so a row break / wrap
+  /// doesn't swallow the connecting transition.
+  Widget _bridge(int taskIndex) {
+    final task = timeline.tasks[taskIndex];
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(width: _gap),
+        TransitionIndicator(
+          displaySettings: displaySettings,
+          theme: theme,
+          taskDuration: task.duration,
+          elapsed: elapsedInTask,
+          isPast: taskIndex < currentTaskIndex,
+          isActive: taskIndex == currentTaskIndex,
+          width: task.width * _scale,
+        ),
+        const SizedBox(width: _gap),
+      ],
     );
   }
 
