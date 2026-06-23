@@ -49,6 +49,15 @@ class _TimelineEditorState extends ConsumerState<TimelineEditor> {
   /// Id of the task whose following transition is selected for width editing.
   dynamic _selectedTransitionId;
 
+  // Card-size clamps and step. Width step (20) and height step (16) preserve the
+  // default 200×160 (1.25) aspect ratio.
+  static const int _minCardWidth = 120;
+  static const int _maxCardWidth = 400;
+  static const int _minCardHeight = 100;
+  static const int _maxCardHeight = 320;
+  static const int _cardWidthStep = 20;
+  static const int _cardHeightStep = 16;
+
   @override
   void dispose() {
     _taskScrollController.dispose();
@@ -113,6 +122,14 @@ class _TimelineEditorState extends ConsumerState<TimelineEditor> {
                         ),
                         const SizedBox(width: 8),
                       ],
+                      OutlinedButton.icon(
+                        onPressed: timeline.tasks.length < 2
+                            ? null
+                            : () => _openReorderDialog(context),
+                        icon: const Icon(LucideIcons.arrowUpDown, size: 18),
+                        label: const Text('Reorder'),
+                      ),
+                      const SizedBox(width: 8),
                       ElevatedButton.icon(
                         key: widget.tourKeyAddTask,
                         onPressed: atLimit ? null : () => _addTask(context),
@@ -128,6 +145,55 @@ class _TimelineEditorState extends ConsumerState<TimelineEditor> {
               );
             }),
             const SizedBox(height: 16),
+
+            // Card size controls — bump every task card (and the End card) bigger
+            // or smaller at once.
+            Builder(builder: (context) {
+              final canGrow = timeline.tasks
+                  .any((t) => t.width < _maxCardWidth || t.height < _maxCardHeight);
+              final canShrink = timeline.tasks
+                  .any((t) => t.width > _minCardWidth || t.height > _minCardHeight);
+              final hasTasks = timeline.tasks.isNotEmpty;
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(LucideIcons.scaling,
+                      size: 16, color: AppColors.brandTextMuted),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Card size',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.brandText,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton(
+                    onPressed: hasTasks && canShrink
+                        ? () => _resizeAllCards(-_cardWidthStep, -_cardHeightStep)
+                        : null,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(44, 40),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: const Icon(LucideIcons.minus, size: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    onPressed: hasTasks && canGrow
+                        ? () => _resizeAllCards(_cardWidthStep, _cardHeightStep)
+                        : null,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(44, 40),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: const Icon(LucideIcons.plus, size: 18),
+                  ),
+                ],
+              );
+            }),
+            const SizedBox(height: 12),
 
             // Scrollable task list
             SizedBox(
@@ -359,6 +425,90 @@ class _TimelineEditorState extends ConsumerState<TimelineEditor> {
       tasks: [...timeline.tasks, newTask],
     );
     ref.read(schoolProvider.notifier).updateTimeline(updated);
+  }
+
+  /// Grow or shrink every task card (and the End card) by the given deltas,
+  /// clamped to the size limits. One timeline update.
+  void _resizeAllCards(int wDelta, int hDelta) {
+    final timeline = widget.timeline;
+    Task resize(Task t) => t.copyWith(
+          width: (t.width + wDelta).clamp(_minCardWidth, _maxCardWidth),
+          height: (t.height + hDelta).clamp(_minCardHeight, _maxCardHeight),
+        );
+    final endCard = timeline.endCard ?? EndCard.initial();
+    final updated = timeline.copyWith(
+      tasks: timeline.tasks.map(resize).toList(),
+      endCard: endCard.copyWith(task: resize(endCard.task)),
+    );
+    ref.read(schoolProvider.notifier).updateTimeline(updated);
+  }
+
+  void _openReorderDialog(BuildContext context) {
+    final reordered = List<Task>.from(widget.timeline.tasks);
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Reorder Tasks'),
+          content: SizedBox(
+            width: 360,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.6,
+              ),
+              child: ReorderableListView.builder(
+                shrinkWrap: true,
+                buildDefaultDragHandles: false,
+                itemCount: reordered.length,
+                onReorder: (oldIndex, newIndex) {
+                  setDialogState(() {
+                    if (newIndex > oldIndex) newIndex -= 1;
+                    final task = reordered.removeAt(oldIndex);
+                    reordered.insert(newIndex, task);
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final task = reordered[index];
+                  final iconData = getIconData(task.icon);
+                  return ListTile(
+                    key: ValueKey(task.id),
+                    leading: Icon(
+                      iconData ?? LucideIcons.square,
+                      color: AppColors.brandPrimary,
+                    ),
+                    title: Text(
+                      task.content,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: ReorderableDragStartListener(
+                      index: index,
+                      child: const Icon(LucideIcons.gripVertical,
+                          color: AppColors.brandTextMuted),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                ref.read(schoolProvider.notifier).updateTimeline(
+                      widget.timeline.copyWith(tasks: reordered),
+                    );
+                Navigator.pop(ctx);
+              },
+              child: const Text('Done'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _deleteTask(dynamic taskId) {
