@@ -7,6 +7,10 @@ class School {
   final String teacherName;
   final String deviceName;
 
+  /// Subscription on/off switch, controlled by RoutineReady staff. When false,
+  /// the classroom's display + admin show a "subscription paused" lock screen.
+  final bool isActive;
+
   School({
     required this.id,
     required this.ownerId,
@@ -15,6 +19,7 @@ class School {
     required this.className,
     required this.teacherName,
     this.deviceName = 'Display 1',
+    this.isActive = true,
   });
 
   factory School.fromJson(Map<String, dynamic> json) {
@@ -26,6 +31,7 @@ class School {
       className: json['class_name'] as String? ?? '',
       teacherName: json['teacher_name'] as String? ?? '',
       deviceName: json['device_name'] as String? ?? 'Display 1',
+      isActive: json['is_active'] as bool? ?? true,
     );
   }
 
@@ -44,6 +50,7 @@ class School {
     String? teacherName,
     String? deviceName,
     String? orgId,
+    bool? isActive,
   }) {
     return School(
       id: id,
@@ -53,6 +60,7 @@ class School {
       className: className ?? this.className,
       teacherName: teacherName ?? this.teacherName,
       deviceName: deviceName ?? this.deviceName,
+      isActive: isActive ?? this.isActive,
     );
   }
 }
