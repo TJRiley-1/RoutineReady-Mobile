@@ -160,14 +160,25 @@ class _OrgDetailViewState extends ConsumerState<OrgDetailView> {
                         DataColumn(label: Text('Class')),
                         DataColumn(label: Text('Teacher')),
                         DataColumn(label: Text('Device')),
+                        DataColumn(label: Text('Status')),
                         DataColumn(label: Text('Actions')),
                       ],
                       rows: schools.map((s) {
+                        final isActive = s['is_active'] as bool? ?? true;
                         return DataRow(cells: [
                           DataCell(Text(s['school_name'] as String? ?? '')),
                           DataCell(Text(s['class_name'] as String? ?? '')),
                           DataCell(Text(s['teacher_name'] as String? ?? '')),
                           DataCell(Text(s['device_name'] as String? ?? '')),
+                          DataCell(Text(
+                            isActive ? 'Active' : 'Paused',
+                            style: TextStyle(
+                              color: isActive
+                                  ? AppColors.brandSuccess
+                                  : AppColors.brandError,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          )),
                           DataCell(Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [

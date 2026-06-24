@@ -166,6 +166,7 @@ class StaffAdminActions {
     String? teacherName,
     String? deviceName,
     String? ownerId,
+    bool? isActive,
   }) async {
     await _invoke({
       'action': 'update_school',
@@ -175,6 +176,7 @@ class StaffAdminActions {
       if (teacherName != null) 'teacher_name': teacherName,
       if (deviceName != null) 'device_name': deviceName,
       if (ownerId != null) 'owner_id': ownerId,
+      if (isActive != null) 'is_active': isActive,
     });
     _ref.invalidate(staffAdminOrgDetailProvider(orgId));
   }

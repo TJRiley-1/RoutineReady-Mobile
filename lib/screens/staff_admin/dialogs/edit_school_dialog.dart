@@ -18,6 +18,7 @@ class _EditSchoolDialogState extends ConsumerState<EditSchoolDialog> {
   late final TextEditingController _teacherNameController;
   late final TextEditingController _deviceNameController;
   bool _loading = false;
+  bool _isActive = true;
 
   bool get _isEditing => widget.school != null;
 
@@ -36,6 +37,7 @@ class _EditSchoolDialogState extends ConsumerState<EditSchoolDialog> {
     _deviceNameController = TextEditingController(
       text: widget.school?['device_name'] as String? ?? 'Display 1',
     );
+    _isActive = widget.school?['is_active'] as bool? ?? true;
   }
 
   @override
@@ -88,6 +90,20 @@ class _EditSchoolDialogState extends ConsumerState<EditSchoolDialog> {
                 border: OutlineInputBorder(),
               ),
             ),
+            if (_isEditing) ...[
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _isActive,
+                onChanged: _loading
+                    ? null
+                    : (v) => setState(() => _isActive = v),
+                title: const Text('Subscription active'),
+                subtitle: Text(_isActive
+                    ? 'Display is on.'
+                    : 'Display is paused — shows a locked screen.'),
+              ),
+            ],
           ],
         ),
       ),
@@ -118,6 +134,7 @@ class _EditSchoolDialogState extends ConsumerState<EditSchoolDialog> {
           className: _classNameController.text.trim(),
           teacherName: _teacherNameController.text.trim(),
           deviceName: _deviceNameController.text.trim(),
+          isActive: _isActive,
         );
       } else {
         await actions.createSchool(
