@@ -12,6 +12,10 @@ class DisplaySettings {
   final String? bottomBannerImage;
   final int bottomBannerHeight;
   final bool showClock;
+
+  /// Where the live clock / banner sits relative to the schedule: 'top' or
+  /// 'bottom'. Applies to every display mode. Per-template.
+  final String clockPosition;
   final int autoPanTileHeight;
   final String selectedSprite;
   final String selectedSurface;
@@ -38,6 +42,7 @@ class DisplaySettings {
     this.bottomBannerImage,
     this.bottomBannerHeight = 48,
     this.showClock = false,
+    this.clockPosition = 'top',
     this.autoPanTileHeight = 60,
     this.selectedSprite = 'penguin',
     this.selectedSurface = 'ice',
@@ -62,6 +67,7 @@ class DisplaySettings {
       bottomBannerImage: json['bottom_banner_image'] as String?,
       bottomBannerHeight: json['bottom_banner_height'] as int? ?? 48,
       showClock: json['show_clock'] as bool? ?? false,
+      clockPosition: json['clock_position'] as String? ?? 'top',
       autoPanTileHeight: json['auto_pan_tile_height'] as int? ?? 60,
       selectedSprite: json['selected_sprite'] as String? ?? 'penguin',
       selectedSurface: json['selected_surface'] as String? ?? 'ice',
@@ -73,27 +79,28 @@ class DisplaySettings {
   }
 
   Map<String, dynamic> toDbJson() => {
-        'width': width,
-        'height': height,
-        'scale': scale,
-        'mode': mode,
-        'rows': rows,
-        'path_direction': pathDirection,
-        'transition_type': transitionType,
-        'mascot_image': mascotImage,
-        'top_banner_image': topBannerImage,
-        'top_banner_height': topBannerHeight,
-        'bottom_banner_image': bottomBannerImage,
-        'bottom_banner_height': bottomBannerHeight,
-        'show_clock': showClock,
-        'auto_pan_tile_height': autoPanTileHeight,
-        'selected_sprite': selectedSprite,
-        'selected_surface': selectedSurface,
-        'road_height': roadHeight,
-        'auto_pan_road_width': autoPanRoadWidth,
-        'auto_optimise': autoOptimise,
-        'multi_row_width': multiRowWidth,
-      };
+    'width': width,
+    'height': height,
+    'scale': scale,
+    'mode': mode,
+    'rows': rows,
+    'path_direction': pathDirection,
+    'transition_type': transitionType,
+    'mascot_image': mascotImage,
+    'top_banner_image': topBannerImage,
+    'top_banner_height': topBannerHeight,
+    'bottom_banner_image': bottomBannerImage,
+    'bottom_banner_height': bottomBannerHeight,
+    'show_clock': showClock,
+    'clock_position': clockPosition,
+    'auto_pan_tile_height': autoPanTileHeight,
+    'selected_sprite': selectedSprite,
+    'selected_surface': selectedSurface,
+    'road_height': roadHeight,
+    'auto_pan_road_width': autoPanRoadWidth,
+    'auto_optimise': autoOptimise,
+    'multi_row_width': multiRowWidth,
+  };
 
   /// DB keys that stay classroom-wide (live in `display_settings`, not on a
   /// template). Everything else follows the template.
@@ -103,11 +110,11 @@ class DisplaySettings {
   /// every per-template field from `this`. Used to resolve the settings the
   /// display actually renders: per-template values + the screen's globals.
   DisplaySettings withGlobalsFrom(DisplaySettings global) => copyWith(
-        mode: global.mode,
-        transitionType: global.transitionType,
-        width: global.width,
-        height: global.height,
-      );
+    mode: global.mode,
+    transitionType: global.transitionType,
+    width: global.width,
+    height: global.height,
+  );
 
   /// Per-template subset of [toDbJson] — the classroom-wide keys removed. Stored
   /// in `templates.settings_json` and the `active_timeline` snapshot.
@@ -133,6 +140,7 @@ class DisplaySettings {
     String? bottomBannerImage,
     int? bottomBannerHeight,
     bool? showClock,
+    String? clockPosition,
     int? autoPanTileHeight,
     String? selectedSprite,
     String? selectedSurface,
@@ -155,6 +163,7 @@ class DisplaySettings {
       bottomBannerImage: bottomBannerImage ?? this.bottomBannerImage,
       bottomBannerHeight: bottomBannerHeight ?? this.bottomBannerHeight,
       showClock: showClock ?? this.showClock,
+      clockPosition: clockPosition ?? this.clockPosition,
       autoPanTileHeight: autoPanTileHeight ?? this.autoPanTileHeight,
       selectedSprite: selectedSprite ?? this.selectedSprite,
       selectedSurface: selectedSurface ?? this.selectedSurface,

@@ -6,6 +6,7 @@ import '../../models/end_card.dart';
 import '../../models/theme_config.dart';
 import '../../utils/theme_utils.dart';
 import '../../utils/time_utils.dart';
+import '../../widgets/display/banner_bar.dart';
 import '../../widgets/display/task_card.dart';
 import '../../widgets/display/transition_indicator.dart';
 
@@ -58,16 +59,19 @@ class _HorizontalDisplayState extends State<HorizontalDisplay> {
     double offset = 148; // start time card width + gap
     for (var i = 0; i < widget.currentTaskIndex; i++) {
       final task = widget.timeline.tasks[i];
-      offset += task.width +
+      offset +=
+          task.width +
           (task.width * 1.5 * task.transitionScale) +
           16; // card + transition + gaps
     }
 
     // Center the current task on screen
     final screenWidth = _scrollController.position.viewportDimension;
-    final targetOffset = (offset - screenWidth / 2 +
-            widget.timeline.tasks[widget.currentTaskIndex].width / 2)
-        .clamp(0.0, _scrollController.position.maxScrollExtent);
+    final targetOffset =
+        (offset -
+                screenWidth / 2 +
+                widget.timeline.tasks[widget.currentTaskIndex].width / 2)
+            .clamp(0.0, _scrollController.position.maxScrollExtent);
 
     _scrollController.animateTo(
       targetOffset,
@@ -83,72 +87,79 @@ class _HorizontalDisplayState extends State<HorizontalDisplay> {
         ? parseHexColor(widget.theme.timeCardAccentColorAlt!)
         : accentColor;
 
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Start time card
-              _TimeCard(
-                time: widget.timeline.startTime,
-                label: 'Start',
-                accentColor: accentColor,
-              ),
-              const SizedBox(width: 8),
-              // Tasks with transitions
-              ...List.generate(widget.timeline.tasks.length, (index) {
-                final task = widget.timeline.tasks[index];
-                final isCurrent = index == widget.currentTaskIndex;
-                final isPast = index < widget.currentTaskIndex;
-                final transitionWidth = (task.width * 1.5 * task.transitionScale);
-
-                return Row(
-                  children: [
-                    TaskCard(
-                      task: task,
-                      theme: widget.theme,
-                      isCurrent: isCurrent,
-                      isPast: isPast,
-                      index: index,
-                    ),
-                    const SizedBox(width: 4),
-                    TransitionIndicator(
-                      displaySettings: widget.displaySettings,
-                      theme: widget.theme,
-                      taskDuration: task.duration,
-                      elapsed: widget.elapsedInTask,
-                      isPast: isPast,
-                      isActive: isCurrent,
-                      width: transitionWidth,
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                );
-              }),
-              // End ("Home Time") card — the last task's trailing transition
-              // above leads into it, giving that task its progress indicator.
-              if ((widget.timeline.endCard ?? EndCard.initial()).enabled) ...[
-                TaskCard(
-                  task: (widget.timeline.endCard ?? EndCard.initial()).task,
-                  theme: widget.theme,
-                  index: widget.timeline.tasks.length,
+    return wrapWithClockBanner(
+      settings: widget.displaySettings,
+      theme: widget.theme,
+      child: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Start time card
+                _TimeCard(
+                  time: widget.timeline.startTime,
+                  label: 'Start',
+                  accentColor: accentColor,
                 ),
                 const SizedBox(width: 8),
+                // Tasks with transitions
+                ...List.generate(widget.timeline.tasks.length, (index) {
+                  final task = widget.timeline.tasks[index];
+                  final isCurrent = index == widget.currentTaskIndex;
+                  final isPast = index < widget.currentTaskIndex;
+                  final transitionWidth =
+                      (task.width * 1.5 * task.transitionScale);
+
+                  return Row(
+                    children: [
+                      TaskCard(
+                        task: task,
+                        theme: widget.theme,
+                        isCurrent: isCurrent,
+                        isPast: isPast,
+                        index: index,
+                      ),
+                      const SizedBox(width: 4),
+                      TransitionIndicator(
+                        displaySettings: widget.displaySettings,
+                        theme: widget.theme,
+                        taskDuration: task.duration,
+                        elapsed: widget.elapsedInTask,
+                        isPast: isPast,
+                        isActive: isCurrent,
+                        width: transitionWidth,
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                  );
+                }),
+                // End ("Home Time") card — the last task's trailing transition
+                // above leads into it, giving that task its progress indicator.
+                if ((widget.timeline.endCard ?? EndCard.initial()).enabled) ...[
+                  TaskCard(
+                    task: (widget.timeline.endCard ?? EndCard.initial()).task,
+                    theme: widget.theme,
+                    index: widget.timeline.tasks.length,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                // End time card
+                _TimeCard(
+                  time: calculateEndTime(
+                    widget.timeline.startTime,
+                    widget.timeline.tasks,
+                  ),
+                  label: 'End',
+                  accentColor: endAccentColor,
+                ),
               ],
-              // End time card
-              _TimeCard(
-                time: calculateEndTime(
-                    widget.timeline.startTime, widget.timeline.tasks),
-                label: 'End',
-                accentColor: endAccentColor,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -177,10 +188,7 @@ class _TimeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border(left: BorderSide(color: accentColor, width: 6)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8),
         ],
       ),
       child: Column(

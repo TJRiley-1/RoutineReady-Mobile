@@ -4,6 +4,7 @@ import '../../models/display_settings.dart';
 import '../../models/end_card.dart';
 import '../../models/task.dart';
 import '../../models/theme_config.dart';
+import '../../widgets/display/banner_bar.dart';
 import '../../widgets/display/task_card.dart';
 import '../../widgets/display/transition_indicator.dart';
 
@@ -46,20 +47,19 @@ class MultiRowDisplay extends StatelessWidget {
     // connecting transition. It never counts as current/past (its index is
     // beyond the real tasks).
     final endCard = timeline.endCard ?? EndCard.initial();
-    final items = <Task>[
-      ...timeline.tasks,
-      if (endCard.enabled) endCard.task,
-    ];
+    final items = <Task>[...timeline.tasks, if (endCard.enabled) endCard.task];
 
     final isSnake = displaySettings.pathDirection == 'snake';
     // Cards wrap at the full display width; per-transition widths (transitionScale)
     // let the user stretch a row to fill it.
-    final available = (displaySettings.width - _timeLabelReserve)
-        .clamp(_scale * 100, displaySettings.width.toDouble());
+    final available = (displaySettings.width - _timeLabelReserve).clamp(
+      _scale * 100,
+      displaySettings.width.toDouble(),
+    );
 
     final rowsIdx = _packRows(items, available);
 
-    return Center(
+    final body = Center(
       child: FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.center,
@@ -80,6 +80,12 @@ class MultiRowDisplay extends StatelessWidget {
         ),
       ),
     );
+
+    return wrapWithClockBanner(
+      settings: displaySettings,
+      theme: theme,
+      child: body,
+    );
   }
 
   /// Greedily packs item indices into rows so each row stays within [available].
@@ -95,7 +101,7 @@ class MultiRowDisplay extends StatelessWidget {
       final connector = row.isEmpty
           ? 0.0
           : (items[i - 1].width * _scale * items[i - 1].transitionScale +
-              _gap * 2);
+                _gap * 2);
       if (row.isNotEmpty && width + connector + cardW > available) {
         rows.add(row);
         row = [i];
@@ -115,7 +121,11 @@ class MultiRowDisplay extends StatelessWidget {
   }
 
   Widget _buildRow(
-      List<Task> items, List<int> indices, bool isReversed, bool hasNext) {
+    List<Task> items,
+    List<int> indices,
+    bool isReversed,
+    bool hasNext,
+  ) {
     final ordered = isReversed ? indices.reversed.toList() : indices;
     final startTime = _calculateTimeAtIndex(items, indices.first);
     final endTime = _calculateTimeAtIndex(items, indices.last + 1);
@@ -196,16 +206,16 @@ class MultiRowDisplay extends StatelessWidget {
   }
 
   Widget _timeLabel(String text) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 10 * _scale,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade600,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: 10 * _scale,
+        fontWeight: FontWeight.w600,
+        color: Colors.grey.shade600,
+      ),
+    ),
+  );
 
   String _calculateTimeAtIndex(List<Task> items, int itemIndex) {
     if (itemIndex <= 0) return timeline.startTime;

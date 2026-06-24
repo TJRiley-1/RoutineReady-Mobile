@@ -52,8 +52,10 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
     }
 
     // Update progress every 500ms for smooth animations
-    _timer =
-        Timer.periodic(const Duration(milliseconds: 500), (_) => _updateProgress());
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 500),
+      (_) => _updateProgress(),
+    );
     _updateProgress();
   }
 
@@ -101,15 +103,15 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
   Widget build(BuildContext context) {
     final schoolState = ref.watch(schoolProvider).valueOrNull;
     if (schoolState == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final timeline = schoolState.timeline;
     final settings = schoolState.displaySettings;
-    final theme =
-        getActiveTheme(schoolState.currentTheme, schoolState.customThemes);
+    final theme = getActiveTheme(
+      schoolState.currentTheme,
+      schoolState.customThemes,
+    );
     final scaleFactor = settings.scale / 100;
     final screenSize = MediaQuery.of(context).size;
 
@@ -123,22 +125,29 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
         children: [
           // Full-screen background
           Container(
-            decoration: BoxDecoration(
-              gradient: getBackgroundGradient(theme),
-            ),
+            decoration: BoxDecoration(gradient: getBackgroundGradient(theme)),
           ),
-          // Scaled display container
-          Transform.scale(
-            scale: fitScale * scaleFactor,
-            alignment: Alignment.topLeft,
+          // Scaled display container, centred in the viewport. The virtual
+          // canvas (settings.width × settings.height) is scaled to fit and
+          // centred via a Center + sized FittedBox, so any leftover space is
+          // split evenly instead of pooling at the bottom (which it did when the
+          // canvas was anchored top-left).
+          Center(
             child: SizedBox(
-              width: settings.width.toDouble(),
-              height: settings.height.toDouble(),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: getBackgroundGradient(theme),
+              width: settings.width * fitScale * scaleFactor,
+              height: settings.height * fitScale * scaleFactor,
+              child: FittedBox(
+                fit: BoxFit.fill,
+                child: SizedBox(
+                  width: settings.width.toDouble(),
+                  height: settings.height.toDouble(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: getBackgroundGradient(theme),
+                    ),
+                    child: _buildDisplayMode(timeline, settings, theme),
+                  ),
                 ),
-                child: _buildDisplayMode(timeline, settings, theme),
               ),
             ),
           ),
@@ -168,8 +177,10 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
                 onTap: _exitToModeSelect,
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
