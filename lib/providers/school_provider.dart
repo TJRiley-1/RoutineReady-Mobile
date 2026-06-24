@@ -94,6 +94,19 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
 
   @override
   Future<SchoolState?> build() async {
+    // Cancel any debounced saves left over from a previous build (e.g. a
+    // classroom switch or auth change). Without this, a pending timer could fire
+    // after the switch and write the *old* classroom's timeline against the
+    // *new* classroom's school_id — corrupting the newly loaded classroom.
+    _displaySettingsDebounce?.cancel();
+    _timelineDebounce?.cancel();
+    _customThemesDebounce?.cancel();
+    ref.onDispose(() {
+      _displaySettingsDebounce?.cancel();
+      _timelineDebounce?.cancel();
+      _customThemesDebounce?.cancel();
+    });
+
     final user = ref.watch(currentUserProvider);
     if (user == null) return null;
 
@@ -847,6 +860,7 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     if (current == null) return;
 
     state = AsyncData(current.copyWith(isSaving: true));
+    final savingState = state.valueOrNull;
 
     try {
       final idMap = await _saveTemplatesToDb(current.templates);
@@ -874,15 +888,35 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
         _saveCustomThemesToDb(current.customThemes),
       ]);
 
-      state = AsyncData(current.copyWith(
-        templates: remappedTemplates,
-        weeklySchedule: remappedSchedule,
-        activeTemplateId: newActiveId,
-        hasUnsavedChanges: false,
-        isSaving: false,
-      ));
+      // The save above ran against the pre-save snapshot. If a user edit or a
+      // realtime update landed while it was in flight, the state object will
+      // have been replaced — rebuilding from the stale `current` would silently
+      // drop those changes and (worse) mark them saved. Detect that and, when it
+      // happens, keep the newer state, apply only the id remap so references
+      // stay valid, and leave it marked dirty so the new edits get persisted.
+      final latest = state.valueOrNull ?? current;
+      if (identical(latest, savingState)) {
+        state = AsyncData(current.copyWith(
+          templates: remappedTemplates,
+          weeklySchedule: remappedSchedule,
+          activeTemplateId: newActiveId,
+          hasUnsavedChanges: false,
+          isSaving: false,
+        ));
+      } else {
+        state = AsyncData(latest.copyWith(
+          templates: latest.templates
+              .map((t) => t.copyWith(id: idMap[t.id.toString()] ?? t.id))
+              .toList(),
+          weeklySchedule: latest.weeklySchedule.remapIds(idMap),
+          activeTemplateId: idMap[latest.activeTemplateId] ?? latest.activeTemplateId,
+          hasUnsavedChanges: true,
+          isSaving: false,
+        ));
+      }
     } catch (e) {
-      state = AsyncData(current.copyWith(isSaving: false));
+      final latest = state.valueOrNull ?? current;
+      state = AsyncData(latest.copyWith(isSaving: false));
       rethrow;
     }
   }

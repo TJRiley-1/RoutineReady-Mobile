@@ -194,7 +194,7 @@ class _TemplateManagerState extends ConsumerState<TemplateManager> {
           ),
         ],
       ),
-    );
+    ).then((_) => controller.dispose());
   }
 
   void _deleteTemplate(TaskTemplate template) {
