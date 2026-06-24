@@ -33,8 +33,9 @@ class ActiveTimeline {
     return ActiveTimeline(
       startTime: json['start_time'] as String? ?? json['startTime'] as String? ?? '08:00',
       endTime: json['end_time'] as String? ?? json['endTime'] as String? ?? '10:30',
-      tasks: (tasksJson as List<dynamic>)
-          .map((t) => Task.fromJson(t as Map<String, dynamic>))
+      tasks: (tasksJson is List ? tasksJson : const [])
+          .whereType<Map>()
+          .map((t) => Task.fromJson(Map<String, dynamic>.from(t)))
           .toList(),
       settings: settingsJson is Map<String, dynamic>
           ? DisplaySettings.fromDbJson(settingsJson)

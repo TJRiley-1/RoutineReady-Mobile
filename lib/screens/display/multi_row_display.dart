@@ -211,7 +211,9 @@ class MultiRowDisplay extends StatelessWidget {
     if (itemIndex <= 0) return timeline.startTime;
 
     final parts = timeline.startTime.split(':');
-    var totalMinutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+    final startH = parts.isNotEmpty ? (int.tryParse(parts[0]) ?? 0) : 0;
+    final startM = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
+    var totalMinutes = startH * 60 + startM;
 
     for (var i = 0; i < itemIndex && i < items.length; i++) {
       totalMinutes += items[i].duration;

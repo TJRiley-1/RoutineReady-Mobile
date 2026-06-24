@@ -99,10 +99,14 @@ class RealtimeManager {
     if (newData.isEmpty) return;
 
     // Carries tasks plus the per-template settings/theme snapshot — this is how
-    // a peer device receives per-template changes live.
-    _ref
-        .read(schoolProvider.notifier)
-        .applyRemoteTimeline(ActiveTimeline.fromJson(newData));
+    // a peer device receives per-template changes live. Guard against a
+    // malformed payload so a bad row can't throw inside the realtime callback;
+    // the next full reload will resync.
+    try {
+      _ref
+          .read(schoolProvider.notifier)
+          .applyRemoteTimeline(ActiveTimeline.fromJson(newData));
+    } catch (_) {}
   }
 
   void _handleDisplaySettingsChange(PostgresChangePayload payload) {
@@ -111,7 +115,9 @@ class RealtimeManager {
 
     // Only the classroom-wide fields live here now; per-template settings + theme
     // arrive via the active_timeline snapshot above.
-    _ref.read(schoolProvider.notifier).applyRemoteGlobals(newData);
+    try {
+      _ref.read(schoolProvider.notifier).applyRemoteGlobals(newData);
+    } catch (_) {}
   }
 
   void unsubscribe() {

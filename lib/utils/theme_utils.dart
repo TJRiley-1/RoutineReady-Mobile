@@ -22,10 +22,12 @@ String getThemeEmoji(String currentTheme, List<ThemeConfig> customThemes) {
 Color parseHexColor(String hex) {
   hex = hex.replaceFirst('#', '');
   if (hex.length == 6) {
-    return Color(int.parse('FF$hex', radix: 16));
+    final v = int.tryParse('FF$hex', radix: 16);
+    return v != null ? Color(v) : Colors.grey;
   }
   if (hex.length == 8) {
-    return Color(int.parse(hex, radix: 16));
+    final v = int.tryParse(hex, radix: 16);
+    return v != null ? Color(v) : Colors.grey;
   }
   return Colors.grey;
 }
@@ -43,7 +45,7 @@ Color parseColorString(String colorStr) {
       final g = int.parse(match.group(2)!);
       final b = int.parse(match.group(3)!);
       final a = match.group(4) != null
-          ? (double.parse(match.group(4)!) * 255).round()
+          ? ((double.tryParse(match.group(4)!) ?? 1.0) * 255).round()
           : 255;
       return Color.fromARGB(a, r, g, b);
     }

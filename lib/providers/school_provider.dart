@@ -452,21 +452,9 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
       'end_card_json': timeline.endCard?.toJson(),
     };
 
-    final existing = await _client
+    await _client
         .from('active_timeline')
-        .select('id')
-        .eq('school_id', schoolId)
-        .limit(1)
-        .maybeSingle();
-
-    if (existing != null) {
-      await _client
-          .from('active_timeline')
-          .update(payload)
-          .eq('id', existing['id']);
-    } else {
-      await _client.from('active_timeline').insert(payload);
-    }
+        .upsert(payload, onConflict: 'school_id');
   }
 
   Future<void> createSchool({
@@ -1039,21 +1027,9 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
       'current_theme': theme,
     };
 
-    final existing = await _client
+    await _client
         .from('display_settings')
-        .select('id')
-        .eq('school_id', current.school.id)
-        .limit(1)
-        .maybeSingle();
-
-    if (existing != null) {
-      await _client
-          .from('display_settings')
-          .update(payload)
-          .eq('id', existing['id']);
-    } else {
-      await _client.from('display_settings').insert(payload);
-    }
+        .upsert(payload, onConflict: 'school_id');
   }
 
   Future<void> _saveTimelineToDb(
@@ -1075,21 +1051,9 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
       'end_card_json': timeline.endCard?.toJson(),
     };
 
-    final existing = await _client
+    await _client
         .from('active_timeline')
-        .select('id')
-        .eq('school_id', current.school.id)
-        .limit(1)
-        .maybeSingle();
-
-    if (existing != null) {
-      await _client
-          .from('active_timeline')
-          .update(payload)
-          .eq('id', existing['id']);
-    } else {
-      await _client.from('active_timeline').insert(payload);
-    }
+        .upsert(payload, onConflict: 'school_id');
   }
 
   /// Writes only the classroom-wide columns to `display_settings`.
@@ -1106,21 +1070,9 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
       'school_id': current.school.id,
     };
 
-    final existing = await _client
+    await _client
         .from('display_settings')
-        .select('id')
-        .eq('school_id', current.school.id)
-        .limit(1)
-        .maybeSingle();
-
-    if (existing != null) {
-      await _client
-          .from('display_settings')
-          .update(payload)
-          .eq('id', existing['id']);
-    } else {
-      await _client.from('display_settings').insert(payload);
-    }
+        .upsert(payload, onConflict: 'school_id');
   }
 
   /// Persists a template's per-template settings + theme directly. No-op for
@@ -1150,19 +1102,12 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
     final current = state.valueOrNull;
     if (current == null) return;
 
-    final existing = await _client
-        .from('active_timeline')
-        .select('id')
-        .eq('school_id', current.school.id)
-        .limit(1)
-        .maybeSingle();
-
-    if (existing != null) {
-      await _client.from('active_timeline').update({
-        'settings_json': settings.toTemplateDbJson(),
-        'current_theme': theme,
-      }).eq('id', existing['id']);
-    }
+    // Update-only by school_id — the snapshot is a partial write that should
+    // only apply when a timeline row already exists (it never creates one).
+    await _client.from('active_timeline').update({
+      'settings_json': settings.toTemplateDbJson(),
+      'current_theme': theme,
+    }).eq('school_id', current.school.id);
   }
 
   static final _uuidPattern = RegExp(
@@ -1236,21 +1181,9 @@ class SchoolNotifier extends AsyncNotifier<SchoolState?> {
       ...schedule.toJson(),
     };
 
-    final existing = await _client
+    await _client
         .from('weekly_schedules')
-        .select('id')
-        .eq('school_id', current.school.id)
-        .limit(1)
-        .maybeSingle();
-
-    if (existing != null) {
-      await _client
-          .from('weekly_schedules')
-          .update(payload)
-          .eq('id', existing['id']);
-    } else {
-      await _client.from('weekly_schedules').insert(payload);
-    }
+        .upsert(payload, onConflict: 'school_id');
   }
 
   Future<void> _saveCustomThemesToDb(List<ThemeConfig> themes) async {
