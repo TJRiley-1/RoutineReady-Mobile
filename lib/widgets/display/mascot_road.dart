@@ -12,6 +12,10 @@ class MascotRoad extends StatelessWidget {
   final String spriteEmoji;
   final String selectedSurface;
 
+  /// When false, the road is drawn without its travelling sprite. Multi-row mode
+  /// uses this to keep the sprite on the active transition only.
+  final bool showSprite;
+
   const MascotRoad({
     super.key,
     required this.taskDuration,
@@ -22,6 +26,7 @@ class MascotRoad extends StatelessWidget {
     required this.roadHeight,
     required this.spriteEmoji,
     required this.selectedSurface,
+    this.showSprite = true,
   });
 
   @override
@@ -62,14 +67,15 @@ class MascotRoad extends StatelessWidget {
             ),
           ),
           // Sprite
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 500),
-            left: (roadWidth * progress).clamp(4, roadWidth - 28),
-            child: Text(
-              spriteEmoji,
-              style: TextStyle(fontSize: roadHeight * 0.7),
+          if (showSprite)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 500),
+              left: (roadWidth * progress).clamp(4, roadWidth - 28),
+              child: Text(
+                spriteEmoji,
+                style: TextStyle(fontSize: roadHeight * 0.7),
+              ),
             ),
-          ),
         ],
       ),
     );

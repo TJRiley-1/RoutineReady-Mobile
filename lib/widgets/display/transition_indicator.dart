@@ -14,6 +14,10 @@ class TransitionIndicator extends StatelessWidget {
   final bool isActive;
   final double width;
 
+  /// When false, the mascot road omits its travelling sprite. Multi-row mode
+  /// sets this so only the active transition carries a sprite.
+  final bool showSprite;
+
   const TransitionIndicator({
     super.key,
     required this.displaySettings,
@@ -23,6 +27,7 @@ class TransitionIndicator extends StatelessWidget {
     required this.isPast,
     required this.isActive,
     required this.width,
+    this.showSprite = true,
   });
 
   @override
@@ -37,6 +42,7 @@ class TransitionIndicator extends StatelessWidget {
         roadHeight: displaySettings.roadHeight,
         spriteEmoji: getSpriteEmoji(displaySettings.selectedSprite),
         selectedSurface: displaySettings.selectedSurface,
+        showSprite: showSprite,
       );
     }
 
