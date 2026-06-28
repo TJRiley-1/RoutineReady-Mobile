@@ -1,8 +1,8 @@
-# RoutineReady Mobile — Claude Code Instructions
+# RoutineReady Web Flutter — Claude Code Instructions
 
 ## What This Is
 
-Visual classroom routine display app for children — shows predictable daily schedules on classroom screens to reduce transition anxiety, especially for autistic learners. Built in Flutter targeting Web, iOS (iPad), and Android (tablets).
+Visual classroom routine display app for children — shows predictable daily schedules on classroom screens to reduce transition anxiety, especially for autistic learners. Built in Flutter targeting Web and Android.
 
 ## Architecture
 

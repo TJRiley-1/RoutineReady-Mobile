@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -I {} basename {})",
+      "WebFetch(domain:www.routineready.co.uk)",
+      "Bash(which flutter:*)",
+      "Bash(flutter build:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(chmod +x /Users/triley/Projects/RoutineReady-Web-Flutter/build.sh)",
+      "Bash(npm install:*)",
+      "Bash(vercel --version)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://www.routineready.co.uk)",
+      "Bash(curl -s https://www.routineready.co.uk | head -30)",
+      "Bash(vercel whoami:*)",
+      "Bash(vercel projects:*)",
+      "Bash(vercel inspect:*)",
+      "Bash(echo '{\"projectId\":\"\",\"orgId\":\"\"}' > /dev/null && vercel link --project routine-ready-co-uk-web --yes 2>&1)",
+      "Bash(vercel deploy:*)",
+      "Bash(rm -rf /Users/triley/Projects/RoutineReady-Web-Flutter/build/web/.vercel 2>/dev/null; vercel link --project routine-ready-co-uk-web --yes 2>&1)",
+      "Bash(cp -r .vercel build/web/.vercel && cd build/web && vercel deploy --prod --skip-domain 2>&1)",
+      "Bash(vercel project:*)",
+      "Bash(vercel env:*)",
+      "Bash(curl -s https://www.routineready.co.uk | head -20)",
+      "Bash(cd /Users/triley/Projects/RoutineReady-Web-Flutter && flutter pub add http 2>&1 | tail -5)",
+      "Bash(curl -sI \"https://esm.sh/react-compiler-runtime@1?bundle\" | head -3)",
+      "Bash(curl -s \"https://registry.npmjs.org/@sanity/visual-editing/5.3.3\" | python3 -c \"\nimport json, sys\ndata = json.load\\(sys.stdin\\)\nprint\\('v5.3.3 \\(latest\\):'\\)\nprint\\('  dependencies:', json.dumps\\(data.get\\('dependencies', {}\\), indent=4\\)\\)\nprint\\('  peerDependencies:', json.dumps\\(data.get\\('peerDependencies', {}\\), indent=4\\)\\)\nprint\\('  exports keys:', list\\(data.get\\('exports', {}\\).keys\\(\\)\\) if data.get\\('exports'\\) else 'none'\\)\n\")",
+      "Bash(curl -s \"https://registry.npmjs.org/@sanity/visual-editing/3.0.0\" | python3 -c \"\nimport json, sys\ndata = json.load\\(sys.stdin\\)\nprint\\('v3.0.0:'\\)\nprint\\('  dependencies:', json.dumps\\(data.get\\('dependencies', {}\\), indent=4\\)\\)\nprint\\('  peerDependencies:', json.dumps\\(data.get\\('peerDependencies', {}\\), indent=4\\)\\)\n\")",
+      "Bash(./deploy.sh 2>&1)",
+      "WebFetch(domain:twinkl.zendesk.com)",
+      "WebSearch",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_edge_functions",
+      "mcp__supabase__get_edge_function"
+    ]
+  }
+}
