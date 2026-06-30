@@ -33,8 +33,16 @@ class RealtimeManager {
 
   void _connect(String schoolId) {
     _channel?.unsubscribe();
+    _channel = null;
 
-    _channel = _client
+    // Capture the channel in a local so the subscribe callback can detect if
+    // it's stale. When _connect() is called again (e.g. during reconnect), the
+    // old channel fires a 'closed' callback asynchronously after unsubscribe.
+    // Without this guard, that stale callback would call _scheduleReconnect(),
+    // tearing down the fresh connection and creating an infinite reload loop
+    // (~7 Supabase queries/sec = 420/min).
+    RealtimeChannel? channel;
+    channel = _client
         .channel('school_$schoolId')
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
@@ -63,6 +71,7 @@ class RealtimeManager {
           },
         )
         .subscribe((status, [error]) {
+          if (!identical(_channel, channel)) return; // stale: already reconnected
           if (status == RealtimeSubscribeStatus.subscribed) {
             _reconnectAttempts = 0;
             _ref.read(realtimeConnectedProvider.notifier).state = true;
@@ -72,6 +81,7 @@ class RealtimeManager {
             _scheduleReconnect();
           }
         });
+    _channel = channel;
   }
 
   void _scheduleReconnect() {
