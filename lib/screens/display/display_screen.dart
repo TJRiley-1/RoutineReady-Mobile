@@ -7,7 +7,7 @@ import '../../models/active_timeline.dart';
 import '../../models/display_settings.dart';
 import '../../models/theme_config.dart';
 import '../../providers/school_provider.dart';
-import '../../providers/realtime_provider.dart';
+import '../../providers/polling_provider.dart';
 import '../../providers/session_provider.dart';
 import '../../utils/theme_utils.dart';
 import '../../utils/time_utils.dart';
@@ -45,12 +45,12 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
       // Chromium --kiosk handles this; no extra action needed
     }
 
-    // Subscribe to realtime only if real data is already loaded.
+    // Start polling only if real data is already loaded.
     // If only cached data is available yet, the ref.listen in build() will
-    // subscribe once the Supabase load completes and replaces the cache.
+    // start polling once the Supabase load completes and replaces the cache.
     final schoolState = ref.read(schoolProvider).valueOrNull;
     if (schoolState != null && !schoolState.isUsingCachedData) {
-      ref.read(realtimeProvider).subscribe(schoolState.school.id);
+      ref.read(pollingProvider).start(schoolState.school.id);
     }
 
     // Update progress every 500ms for smooth animations
@@ -67,7 +67,7 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
     WidgetsBinding.instance.removeObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-    ref.read(realtimeProvider).unsubscribe();
+    ref.read(pollingProvider).stop();
     super.dispose();
   }
 
@@ -76,7 +76,7 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
     if (state == AppLifecycleState.resumed) {
       final schoolState = ref.read(schoolProvider).valueOrNull;
       if (schoolState != null && !schoolState.isUsingCachedData) {
-        ref.read(realtimeProvider).subscribe(schoolState.school.id);
+        ref.read(pollingProvider).start(schoolState.school.id);
       }
       _updateProgress();
     }
@@ -102,15 +102,15 @@ class _DisplayScreenState extends ConsumerState<DisplayScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Subscribe to realtime as soon as real data replaces the startup cache,
-    // or whenever the active classroom changes (e.g. staff switching rooms).
+    // Start polling as soon as real data replaces the startup cache, or
+    // whenever the active classroom changes (e.g. staff switching rooms).
     ref.listen<AsyncValue<SchoolState?>>(schoolProvider, (previous, next) {
       final prev = previous?.valueOrNull;
       final curr = next.valueOrNull;
       if (curr == null || curr.isUsingCachedData) return;
       final prevId = (prev != null && !prev.isUsingCachedData) ? prev.school.id : null;
       if (curr.school.id != prevId) {
-        ref.read(realtimeProvider).subscribe(curr.school.id);
+        ref.read(pollingProvider).start(curr.school.id);
       }
     });
 
